@@ -2,7 +2,7 @@ import { Kafka } from 'kafkajs';
 
 export const kafka = new Kafka({
   clientId: 'airport-tracker',
-  brokers: ['localhost:9092'], // Change if running Kafka outside WSL
+  brokers: process.env.KAFKA_BROKERS.split(','), // supports multiple brokers if needed
 });
 
 export const producer = kafka.producer();

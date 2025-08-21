@@ -1,0 +1,181 @@
+import React, { useState } from "react";
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Grid,
+  Button,
+  Alert,
+} from "@mui/material";
+import { useAuth } from "../../context/AuthContext";
+import * as api from "../../services/api";
+import { useNavigate } from "react-router-dom";
+
+export default function FlightCreate() {
+  const { token } = useAuth();
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    flightNo: "",
+    airlineCode: "",   // 👈 required by backend
+    origin: "",
+    destination: "",
+    gate: "",
+    scheduledDep: "",
+    scheduledArr: "",
+    status: "scheduled",
+  });
+
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+
+  const submit = async () => {
+    setMsg("");
+    setErr("");
+    try {
+      await api.createFlight(form, token);
+      setMsg("Flight created successfully");
+      setTimeout(() => navigate("/flights"), 800);
+    } catch (e) {
+      setErr(e?.response?.data?.error || "Failed to create flight");
+    }
+  };
+
+  return (
+    <Card sx={{ maxWidth: 900, mx: "auto", borderRadius: 3 }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+          Create Flight
+        </Typography>
+
+        {msg && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {msg}
+          </Alert>
+        )}
+        {err && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {err}
+          </Alert>
+        )}
+
+        <Grid container spacing={2}>
+          {/* Flight No */}
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Flight No"
+              value={form.flightNo}
+              onChange={(e) => setForm({ ...form, flightNo: e.target.value })}
+              required
+            />
+          </Grid>
+
+          {/* Airline Code */}
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Airline Code"
+              value={form.airlineCode}
+              onChange={(e) => setForm({ ...form, airlineCode: e.target.value })}
+              required
+            />
+          </Grid>
+
+          {/* Origin */}
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Origin (IATA)"
+              value={form.origin}
+              onChange={(e) => setForm({ ...form, origin: e.target.value })}
+              required
+            />
+          </Grid>
+
+          {/* Destination */}
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Destination (IATA)"
+              value={form.destination}
+              onChange={(e) =>
+                setForm({ ...form, destination: e.target.value })
+              }
+              required
+            />
+          </Grid>
+
+          {/* Gate */}
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Gate"
+              value={form.gate}
+              onChange={(e) => setForm({ ...form, gate: e.target.value })}
+            />
+          </Grid>
+
+          {/* Scheduled Departure */}
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              type="datetime-local"
+              label="Scheduled Departure"
+              InputLabelProps={{ shrink: true }}
+              value={form.scheduledDep}
+              onChange={(e) =>
+                setForm({ ...form, scheduledDep: e.target.value })
+              }
+              required
+            />
+          </Grid>
+
+          {/* Scheduled Arrival */}
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              type="datetime-local"
+              label="Scheduled Arrival"
+              InputLabelProps={{ shrink: true }}
+              value={form.scheduledArr}
+              onChange={(e) =>
+                setForm({ ...form, scheduledArr: e.target.value })
+              }
+              required
+            />
+          </Grid>
+
+          {/* Status */}
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Status"
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+            />
+          </Grid>
+        </Grid>
+
+        <Box sx={{ mt: 2, textAlign: "right" }}>
+          <Button
+            variant="contained"
+            onClick={submit}
+            disabled={
+              !form.flightNo ||
+              !form.airlineCode ||   // 👈 must be provided
+              !form.origin ||
+              !form.destination ||
+              !form.scheduledDep ||
+              !form.scheduledArr
+            }
+          >
+            Create
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}

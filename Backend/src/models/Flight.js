@@ -1,19 +1,31 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const flightSchema = new mongoose.Schema({
-  flightNo: { type: String, unique: true, index: true },
-  airlineCode: String,
-  origin: String,
-  destination: String,
-  gate: String,
-  scheduledDep: Date,
-  scheduledArr: Date,
-  status: {
-    type: String,
-    enum: ['scheduled', 'boarding', 'departed', 'arrived', 'delayed', 'cancelled'],
-    default: 'scheduled'
+const flightSchema = new mongoose.Schema(
+  {
+    flightNo: { type: String, unique: true, index: true, required: true },
+    airlineCode: { type: String, required: true },
+    origin: { type: String, required: true },
+    destination: { type: String, required: true },
+    gate: { type: String },
+    scheduledDep: { type: Date, required: true },
+    scheduledArr: { type: Date, required: true },
+    status: {
+      type: String,
+      enum: [
+        "scheduled",
+        "boarding",
+        "departed",
+        "arrived",
+        "delayed",
+        "cancelled",
+      ],
+      default: "scheduled",
+    },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-}, { timestamps: true });
+  { timestamps: true }
+);
 
-export default mongoose.model('Flight', flightSchema);
+const Flight = mongoose.model("Flight", flightSchema);
+
+export default Flight;

@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon src/server.js",
-    "seed-admin":"node src/scripts/seedAdmin.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed-admin": "node src/scripts/seedAdmin.js"
   },
   "author": "",
   "license": "ISC",
