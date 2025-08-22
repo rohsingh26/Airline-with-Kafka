@@ -8,10 +8,20 @@ import {
   Grid,
   Button,
   Alert,
+  MenuItem,
 } from "@mui/material";
 import { useAuth } from "../../context/AuthContext";
 import * as api from "../../services/api";
 import { useNavigate } from "react-router-dom";
+
+const statusOptions = [
+  { value: "scheduled", label: "Scheduled" },
+  { value: "boarding", label: "Boarding" },
+  { value: "departed", label: "Departed" },
+  { value: "arrived", label: "Arrived" },
+  { value: "delayed", label: "Delayed" },
+  { value: "cancelled", label: "Cancelled" },
+];
 
 export default function FlightCreate() {
   const { token } = useAuth();
@@ -19,13 +29,13 @@ export default function FlightCreate() {
 
   const [form, setForm] = useState({
     flightNo: "",
-    airlineCode: "",   // 👈 required by backend
+    airlineCode: "", // required
     origin: "",
     destination: "",
     gate: "",
     scheduledDep: "",
     scheduledArr: "",
-    status: "scheduled",
+    status: "scheduled", // default
   });
 
   const [msg, setMsg] = useState("");
@@ -79,7 +89,9 @@ export default function FlightCreate() {
               fullWidth
               label="Airline Code"
               value={form.airlineCode}
-              onChange={(e) => setForm({ ...form, airlineCode: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, airlineCode: e.target.value })
+              }
               required
             />
           </Grid>
@@ -148,14 +160,21 @@ export default function FlightCreate() {
             />
           </Grid>
 
-          {/* Status */}
+          {/* Status - dropdown */}
           <Grid item xs={12} md={4}>
             <TextField
+              select
               fullWidth
               label="Status"
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
-            />
+            >
+              {statusOptions.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
         </Grid>
 
@@ -165,7 +184,7 @@ export default function FlightCreate() {
             onClick={submit}
             disabled={
               !form.flightNo ||
-              !form.airlineCode ||   // 👈 must be provided
+              !form.airlineCode ||
               !form.origin ||
               !form.destination ||
               !form.scheduledDep ||

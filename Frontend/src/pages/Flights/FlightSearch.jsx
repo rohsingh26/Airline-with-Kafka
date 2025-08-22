@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { Box, TextField, Button, Grid, Card, CardContent, Typography, Alert } from "@mui/material";
+import { 
+  Box, 
+  TextField, 
+  Button, 
+  Grid, 
+  Card, 
+  CardContent, 
+  Typography, 
+  Alert 
+} from "@mui/material";
 import { useAuth } from "../../context/AuthContext";
 import * as api from "../../services/api";
 
@@ -24,6 +33,16 @@ export default function FlightSearch({ compact = false }) {
     setFlightNo("");
     setResult(null);
     setErr("");
+  };
+
+  const getCardStyle = (status) => {
+    if (status === "cancelled") {
+      return { backgroundColor: "#e76464ff" }; // red background
+    }
+    if (status === "delayed") {
+      return { border: "2px solid red" }; // red border
+    }
+    return {};
   };
 
   return (
@@ -63,7 +82,13 @@ export default function FlightSearch({ compact = false }) {
       {err && <Alert severity="error" sx={{ mt: 2 }}>{err}</Alert>}
 
       {result && (
-        <Card sx={{ mt: 2, borderRadius: 3 }}>
+        <Card 
+          sx={{ 
+            mt: 2, 
+            borderRadius: 3, 
+            ...getCardStyle(result.status) 
+          }}
+        >
           <CardContent>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
               {result.flightNo} — {result.origin} → {result.destination}

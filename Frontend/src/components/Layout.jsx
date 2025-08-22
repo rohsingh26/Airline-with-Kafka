@@ -11,30 +11,34 @@ import {
   MenuItem,
   Divider,
   Button,
+  useMediaQuery,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
 import WorkIcon from "@mui/icons-material/Work";
-import SearchIcon from "@mui/icons-material/Search";
 import LuggageIcon from "@mui/icons-material/Luggage";
 import AddIcon from "@mui/icons-material/Add";
 import LogoutIcon from "@mui/icons-material/Logout";
 import EditIcon from "@mui/icons-material/Edit";
+import MenuIcon from "@mui/icons-material/Menu";
 import { useAuth } from "../context/AuthContext";
 import ProfileDialog from "./ProfileDialog";
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const [menuAnchor, setMenuAnchor] = React.useState(null); // mobile menu
   const [openProfile, setOpenProfile] = React.useState(false);
   const open = Boolean(anchorEl);
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useMediaQuery("(max-width:1000px)");
+  const isTiny = useMediaQuery("(max-width:500px)"); // 👈 for username hiding
 
+  // Removed Search Flight from here
   const menuItems = [
     { to: "/", label: "Dashboard", icon: <DashboardIcon /> },
     { to: "/flights", label: "Flights", icon: <FlightTakeoffIcon /> },
-    { to: "/flights/search", label: "Search Flight", icon: <SearchIcon /> },
     { to: "/baggage", label: "Baggage", icon: <LuggageIcon /> },
   ];
 
@@ -49,64 +53,143 @@ export default function Layout() {
         sx={{ bgcolor: "#1A1A2E", color: "#fff" }}
       >
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: "#D4AF37" }}>
-            Airline
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {isMobile && (
+              <>
+                <IconButton
+                  color="inherit"
+                  onClick={(e) => setMenuAnchor(e.currentTarget)}
+                >
+                  <MenuIcon />
+                </IconButton>
+                <Menu
+                  anchorEl={menuAnchor}
+                  open={Boolean(menuAnchor)}
+                  onClose={() => setMenuAnchor(null)}
+                  PaperProps={{
+                    sx: {
+                      bgcolor: "#1A1A2E",
+                      color: "#fff",
+                      "& .MuiMenuItem-root": {
+                        "&:hover": {
+                          bgcolor: "rgba(212,175,55,0.1)",
+                          color: "#D4AF37",
+                        },
+                      },
+                    },
+                  }}
+                >
+                  {menuItems.map((m) => (
+                    <MenuItem
+                      key={m.to}
+                      onClick={() => {
+                        navigate(m.to);
+                        setMenuAnchor(null);
+                      }}
+                    >
+                      {m.icon}
+                      <Typography sx={{ ml: 1 }}>{m.label}</Typography>
+                    </MenuItem>
+                  ))}
 
-          {/* Navbar Menu */}
-          <Box sx={{ display: "flex", gap: 2 }}>
-            {menuItems.map((m) => (
-              <Button
-                key={m.to}
-                component={Link}
-                to={m.to}
-                startIcon={m.icon}
-                sx={{
-                  color: location.pathname === m.to ? "#D4AF37" : "#fff",
-                  fontWeight: 600,
-                  "&:hover": { color: "#D4AF37" },
-                }}
-              >
-                {m.label}
-              </Button>
-            ))}
+                  {canCreateFlight && (
+                    <MenuItem
+                      onClick={() => {
+                        navigate("/flights/create");
+                        setMenuAnchor(null);
+                      }}
+                    >
+                      <AddIcon fontSize="small" />
+                      <Typography sx={{ ml: 1 }}>New Flight</Typography>
+                    </MenuItem>
+                  )}
 
-            {canCreateFlight && (
-              <Button
-                component={Link}
-                to="/flights/create"
-                startIcon={<AddIcon />}
-                sx={{
-                  color: "#D4AF37",
-                  fontWeight: 600,
-                  "&:hover": { color: "#fff", bgcolor: "rgba(212,175,55,0.1)" },
-                }}
-              >
-                New Flight
-              </Button>
+                  {canCreateBaggage && (
+                    <MenuItem
+                      onClick={() => {
+                        navigate("/baggage/create");
+                        setMenuAnchor(null);
+                      }}
+                    >
+                      <WorkIcon fontSize="small" />
+                      <Typography sx={{ ml: 1 }}>Add Baggage</Typography>
+                    </MenuItem>
+                  )}
+                </Menu>
+              </>
             )}
 
-            {canCreateBaggage && (
-              <Button
-                component={Link}
-                to="/baggage/create"
-                startIcon={<WorkIcon />}
-                sx={{
-                  color: "#D4AF37",
-                  fontWeight: 600,
-                  "&:hover": { color: "#fff", bgcolor: "rgba(212,175,55,0.1)" },
-                }}
-              >
-                Add Baggage
-              </Button>
-            )}
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#D4AF37" }}>
+              Airline
+            </Typography>
           </Box>
+
+          {/* Navbar Menu for desktop */}
+          {!isMobile && (
+            <Box sx={{ display: "flex", gap: 2 }}>
+              {menuItems.map((m) => (
+                <Button
+                  key={m.to}
+                  component={Link}
+                  to={m.to}
+                  startIcon={m.icon}
+                  sx={{
+                    color: location.pathname === m.to ? "#D4AF37" : "#fff",
+                    fontWeight: 600,
+                    "&:hover": { color: "#D4AF37" },
+                  }}
+                >
+                  {m.label}
+                </Button>
+              ))}
+
+              {canCreateFlight && (
+                <Button
+                  component={Link}
+                  to="/flights/create"
+                  startIcon={<AddIcon />}
+                  sx={{
+                    color: "#D4AF37",
+                    fontWeight: 600,
+                    "&:hover": {
+                      color: "#fff",
+                      bgcolor: "rgba(212,175,55,0.1)",
+                    },
+                  }}
+                >
+                  New Flight
+                </Button>
+              )}
+
+              {canCreateBaggage && (
+                <Button
+                  component={Link}
+                  to="/baggage/create"
+                  startIcon={<WorkIcon />}
+                  sx={{
+                    color: "#D4AF37",
+                    fontWeight: 600,
+                    "&:hover": {
+                      color: "#fff",
+                      bgcolor: "rgba(212,175,55,0.1)",
+                    },
+                  }}
+                >
+                  Add Baggage
+                </Button>
+              )}
+            </Box>
+          )}
 
           {/* Profile Menu */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Typography variant="body1" sx={{ fontWeight: 600, color: "#fff" }}>
-              {user?.name}
-            </Typography>
+            {/* Show name only if screen is not tiny */}
+            {!isTiny && (
+              <Typography variant="body1" sx={{ fontWeight: 600, color: "#fff" }}>
+                {user?.name}
+              </Typography>
+            )}
+
             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small">
               <Avatar
                 sx={{ bgcolor: "#D4AF37", color: "#1A1A2E", fontWeight: 700 }}
@@ -125,12 +208,23 @@ export default function Layout() {
                   bgcolor: "#1A1A2E",
                   color: "#fff",
                   "& .MuiMenuItem-root": {
-                    "&:hover": { bgcolor: "rgba(212,175,55,0.1)", color: "#D4AF37" },
+                    "&:hover": {
+                      bgcolor: "rgba(212,175,55,0.1)",
+                      color: "#D4AF37",
+                    },
                   },
                 },
               }}
             >
-              {/* Show user email + role */}
+              {/* Show full name only in tiny mode */}
+              {isTiny && (
+                <MenuItem disabled>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {user?.name}
+                  </Typography>
+                </MenuItem>
+              )}
+
               <MenuItem disabled>
                 <Box>
                   <Typography variant="body2">{user?.email}</Typography>
@@ -151,7 +245,8 @@ export default function Layout() {
                   setAnchorEl(null);
                 }}
               >
-                <EditIcon fontSize="small" style={{ marginRight: 8 }} /> Edit Profile
+                <EditIcon fontSize="small" style={{ marginRight: 8 }} /> Edit
+                Profile
               </MenuItem>
 
               {user?.role === "passenger" && (
@@ -183,7 +278,6 @@ export default function Layout() {
         <Outlet />
       </Box>
 
-      {/* Pass role to ProfileDialog */}
       <ProfileDialog
         open={openProfile}
         onClose={() => setOpenProfile(false)}
