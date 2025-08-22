@@ -9,7 +9,7 @@ import FlightsList from "./pages/Flights/FlightsList";
 import BaggageList from "./pages/Baggage/BaggageList";
 import BaggageCreate from "./pages/Baggage/BaggageCreate";
 import MyFlights from "./pages/Passengers/MyFlights";
-import AddUsers from "./pages/Admin/AddUsers"; // ✅ AddUsers page
+import AddUsers from "./pages/Admin/AddUsers"; 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 
@@ -29,20 +29,76 @@ function App() {
         <Route index element={<Dashboard />} />
 
         {/* Flights */}
-        <Route path="flights" element={<FlightsPage />} />
-        <Route path="flights/create" element={<FlightCreate />} />
-        <Route path="flights/search" element={<FlightSearch />} />
-        <Route path="flights/list" element={<FlightsList />} />
+        <Route
+          path="flights"
+          element={
+            <ProtectedRoute roles={["admin", "airline", "passenger"]}>
+              <FlightsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="flights/create"
+          element={
+            <ProtectedRoute roles={["admin", "airline"]}>
+              <FlightCreate />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="flights/search"
+          element={
+            <ProtectedRoute roles={["admin", "airline", "passenger"]}>
+              <FlightSearch />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="flights/list"
+          element={
+            <ProtectedRoute roles={["admin", "airline", "passenger"]}>
+              <FlightsList />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Baggage */}
-        <Route path="baggage" element={<BaggageList />} />
-        <Route path="baggage/create" element={<BaggageCreate />} />
+        <Route
+          path="baggage"
+          element={
+            <ProtectedRoute roles={["admin", "airline", "baggage", "passenger"]}>
+              <BaggageList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="baggage/create"
+          element={
+            <ProtectedRoute roles={["admin", "baggage"]}>
+              <BaggageCreate />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Passenger */}
-        <Route path="my-flights" element={<MyFlights />} />
+        <Route
+          path="my-flights"
+          element={
+            <ProtectedRoute roles={["passenger"]}>
+              <MyFlights />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Admin */}
-        <Route path="admin/add-users" element={<AddUsers />} />
+        <Route
+          path="admin/add-users"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AddUsers />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

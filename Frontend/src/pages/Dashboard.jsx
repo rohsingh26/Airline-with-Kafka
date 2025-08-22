@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Typography, Grid, Card, CardContent } from "@mui/material";
+import { Box, Card, CardContent, Typography } from "@mui/material";
 import { useAuth } from "../context/AuthContext";
 import FlightsList from "./Flights/FlightsList";
 import BaggageList from "./Baggage/BaggageList";
@@ -21,7 +21,8 @@ export default function Dashboard() {
 
       {/* Role-based sections */}
       <Box sx={{ mt: 3 }}>
-        {(user?.role === "admin" || user?.role === "airline" || user?.role === "baggage") && (
+        {/* Flights List: visible for admin, airline, and passengers */}
+        {(user?.role === "admin" || user?.role === "airline" || user?.role === "passenger") && (
           <Card sx={{ borderRadius: 3, mb: 2 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
@@ -32,7 +33,8 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {(user?.role === "admin" || user?.role === "baggage" || user?.role === "airline") && (
+        {/* Baggage List: visible for admin, baggage staff, and passengers */}
+        {(user?.role === "admin" || user?.role === "baggage" || user?.role === "passenger") && (
           <Card sx={{ borderRadius: 3 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>

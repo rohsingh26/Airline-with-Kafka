@@ -15,8 +15,7 @@ import {
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
-import WorkIcon from "@mui/icons-material/Work";
-import LuggageIcon from "@mui/icons-material/Luggage";
+import WorkIcon from "@mui/icons-material/Luggage";
 import AddIcon from "@mui/icons-material/Add";
 import LogoutIcon from "@mui/icons-material/Logout";
 import EditIcon from "@mui/icons-material/Edit";
@@ -27,22 +26,22 @@ import ProfileDialog from "./ProfileDialog";
 export default function Layout() {
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = React.useState(null);
-  const [menuAnchor, setMenuAnchor] = React.useState(null); // mobile menu
+  const [menuAnchor, setMenuAnchor] = React.useState(null);
   const [openProfile, setOpenProfile] = React.useState(false);
   const open = Boolean(anchorEl);
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:1000px)");
-  const isTiny = useMediaQuery("(max-width:500px)"); // for username hiding
+  const isTiny = useMediaQuery("(max-width:500px)");
 
   const menuItems = [
     { to: "/", label: "Dashboard", icon: <DashboardIcon /> },
     { to: "/flights", label: "Flights", icon: <FlightTakeoffIcon /> },
-    { to: "/baggage", label: "Baggage", icon: <LuggageIcon /> },
+    { to: "/baggage", label: "Baggage", icon: <WorkIcon /> },
   ];
 
-  const canCreateFlight = user?.role === "admin" || user?.role === "airline";
-  const canCreateBaggage = ["admin", "airline", "baggage"].includes(user?.role);
+  const canCreateFlight = ["admin", "airline"].includes(user?.role);
+  const canCreateBaggage = ["admin", "baggage"].includes(user?.role);
   const isAdmin = user?.role === "admin";
 
   return (
@@ -278,7 +277,6 @@ export default function Layout() {
       </AppBar>
 
       <Box sx={{ p: 3 }}>
-        {/* This will render AddUsers or other pages */}
         <Outlet />
       </Box>
 

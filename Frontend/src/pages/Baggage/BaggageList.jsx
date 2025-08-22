@@ -22,11 +22,13 @@ import * as api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
 export default function BaggageList({ embedded = false }) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [rows, setRows] = useState([]);
   const [err, setErr] = useState("");
   const [editRow, setEditRow] = useState(null);
   const [patch, setPatch] = useState({ status: "", lastLocation: "" });
+
+  const canEditBaggage = ["admin", "baggage"].includes(user?.role);
 
   const statusOptions = [
     { value: "checkin", label: "Check-in" },
@@ -50,7 +52,7 @@ export default function BaggageList({ embedded = false }) {
     try {
       const data = await api.listBaggage(token);
       setRows(data);
-    } catch (e) {
+    } catch {
       setErr("Failed to load baggage");
     }
   };
@@ -67,10 +69,7 @@ export default function BaggageList({ embedded = false }) {
 
   const startEdit = (row) => {
     setEditRow(row._id);
-    setPatch({
-      status: row.status || "",
-      lastLocation: row.lastLocation || "",
-    });
+    setPatch({ status: row.status || "", lastLocation: row.lastLocation || "" });
   };
 
   const saveEdit = async () => {
@@ -83,12 +82,9 @@ export default function BaggageList({ embedded = false }) {
     }
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   if (err) return <Alert severity="error">{err}</Alert>;
-
   if (rows.length === 0)
     return (
       <Box>
@@ -99,7 +95,7 @@ export default function BaggageList({ embedded = false }) {
     );
 
   return (
-    <Card sx={{ borderRadius: 3, boxShadow: 3,}}>
+    <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
       <CardContent>
         <Table
           size="small"
@@ -107,13 +103,8 @@ export default function BaggageList({ embedded = false }) {
             border: "1px solid #e0e0e0",
             borderRadius: 2,
             overflow: "hidden",
-            "& th": {
-              backgroundColor: "#f5f5f5",
-              fontWeight: 700,
-            },
-            "& tr:nth-of-type(odd)": {
-              backgroundColor: "#fafafa",
-            },
+            "& th": { backgroundColor: "#f5f5f5", fontWeight: 700 },
+            "& tr:nth-of-type(odd)": { backgroundColor: "#fafafa" },
           }}
         >
           <TableHead>
@@ -122,9 +113,10 @@ export default function BaggageList({ embedded = false }) {
               <TableCell>Flight</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Last Location</TableCell>
-              <TableCell align="center">Actions</TableCell>
+              {canEditBaggage && <TableCell align="center">Actions</TableCell>}
             </TableRow>
           </TableHead>
+
           <TableBody>
             {rows.map((b) => (
               <TableRow key={b._id}>
@@ -137,22 +129,15 @@ export default function BaggageList({ embedded = false }) {
                       size="small"
                       select
                       value={patch.status}
-                      onChange={(e) =>
-                        setPatch({ ...patch, status: e.target.value })
-                      }
+                      onChange={(e) => setPatch({ ...patch, status: e.target.value })}
                     >
                       {statusOptions.map((s) => (
-                        <MenuItem key={s.value} value={s.value}>
-                          {s.label}
-                        </MenuItem>
+                        <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>
                       ))}
                     </TextField>
                   ) : (
                     <Chip
-                      label={
-                        statusOptions.find((s) => s.value === b.status)?.label ||
-                        b.status
-                      }
+                      label={statusOptions.find((s) => s.value === b.status)?.label || b.status}
                       sx={{
                         backgroundColor: statusColors[b.status]?.bg,
                         color: statusColors[b.status]?.color,
@@ -168,44 +153,30 @@ export default function BaggageList({ embedded = false }) {
                     <TextField
                       size="small"
                       value={patch.lastLocation}
-                      onChange={(e) =>
-                        setPatch({ ...patch, lastLocation: e.target.value })
-                      }
+                      onChange={(e) => setPatch({ ...patch, lastLocation: e.target.value })}
                     />
                   ) : (
                     b.lastLocation ?? "-"
                   )}
                 </TableCell>
 
-                <TableCell align="center">
-                  {editRow === b._id ? (
-                    <>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={saveEdit}
-                        sx={{ mr: 1 }}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        size="small"
-                        onClick={() => setEditRow(null)}
-                      >
-                        Cancel
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <IconButton onClick={() => startEdit(b)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton onClick={() => handleDelete(b._id)}>
-                        <DeleteIcon color="error" />
-                      </IconButton>
-                    </>
-                  )}
-                </TableCell>
+                {canEditBaggage && (
+                  <TableCell align="center">
+                    {editRow === b._id ? (
+                      <>
+                        <Button size="small" variant="contained" onClick={saveEdit} sx={{ mr: 1 }}>
+                          Save
+                        </Button>
+                        <Button size="small" onClick={() => setEditRow(null)}>Cancel</Button>
+                      </>
+                    ) : (
+                      <>
+                        <IconButton onClick={() => startEdit(b)}><EditIcon /></IconButton>
+                        <IconButton onClick={() => handleDelete(b._id)}><DeleteIcon color="error" /></IconButton>
+                      </>
+                    )}
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

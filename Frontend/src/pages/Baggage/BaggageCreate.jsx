@@ -13,7 +13,7 @@ import * as api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
 export default function BaggageCreate({ onCreated }) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [flights, setFlights] = useState([]);
   const [form, setForm] = useState({
     tagId: "",
@@ -25,6 +25,9 @@ export default function BaggageCreate({ onCreated }) {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
 
+  const canCreateBaggage = ["admin", "baggage"].includes(user?.role);
+  if (!canCreateBaggage) return null; // hide form if not allowed
+
   const loadFlights = async () => {
     try {
       const data = await api.listFlights(token);
@@ -34,12 +37,10 @@ export default function BaggageCreate({ onCreated }) {
     }
   };
 
-  // Load flights on mount
   useEffect(() => {
     loadFlights();
   }, []);
 
-  // Set default flight if flights exist
   useEffect(() => {
     if (flights.length > 0 && !form.flightId) {
       setForm((prev) => ({ ...prev, flightId: flights[0]._id }));
@@ -51,10 +52,7 @@ export default function BaggageCreate({ onCreated }) {
     setErr("");
     try {
       await api.createBaggage(
-        {
-          ...form,
-          weight: form.weight ? Number(form.weight) : undefined,
-        },
+        { ...form, weight: form.weight ? Number(form.weight) : undefined },
         token
       );
       setMsg("Baggage created / assigned");
@@ -81,11 +79,12 @@ export default function BaggageCreate({ onCreated }) {
   ];
 
   return (
-    <Card sx={{ maxWidth: 1030, mx: "auto", borderRadius: 3}}>
+    <Card sx={{ maxWidth: 1030, mx: "auto", borderRadius: 3 }}>
       <CardContent>
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
           Add Baggage
         </Typography>
+
         {msg && <Alert severity="success" sx={{ mb: 2 }}>{msg}</Alert>}
         {err && <Alert severity="error" sx={{ mb: 2 }}>{err}</Alert>}
 
@@ -98,6 +97,7 @@ export default function BaggageCreate({ onCreated }) {
               onChange={(e) => setForm({ ...form, tagId: e.target.value })}
             />
           </Grid>
+
           <Grid item xs={12} md={4}>
             <TextField
               select
@@ -110,9 +110,7 @@ export default function BaggageCreate({ onCreated }) {
                 renderValue: (selected) => {
                   if (!selected) return "Add Flight";
                   const flight = flights.find((f) => f._id === selected);
-                  return flight
-                    ? `${flight.flightNo} — ${flight.origin}→${flight.destination}`
-                    : "Add Flight";
+                  return flight ? `${flight.flightNo} — ${flight.origin}→${flight.destination}` : "Add Flight";
                 },
               }}
             >
@@ -123,6 +121,7 @@ export default function BaggageCreate({ onCreated }) {
               ))}
             </TextField>
           </Grid>
+
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
@@ -131,6 +130,7 @@ export default function BaggageCreate({ onCreated }) {
               onChange={(e) => setForm({ ...form, weight: e.target.value })}
             />
           </Grid>
+
           <Grid item xs={12} md={6}>
             <TextField
               select
@@ -138,23 +138,19 @@ export default function BaggageCreate({ onCreated }) {
               label="Status"
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
-              InputLabelProps={{ shrink: true }}
             >
               {statusOptions.map((s) => (
-                <MenuItem key={s.value} value={s.value}>
-                  {s.label}
-                </MenuItem>
+                <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>
               ))}
             </TextField>
           </Grid>
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label="Last Location"
               value={form.lastLocation}
-              onChange={(e) =>
-                setForm({ ...form, lastLocation: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, lastLocation: e.target.value })}
             />
           </Grid>
         </Grid>

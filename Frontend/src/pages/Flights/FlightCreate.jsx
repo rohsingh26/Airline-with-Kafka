@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Card,
@@ -24,22 +24,26 @@ const statusOptions = [
 ];
 
 export default function FlightCreate() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
-
   const [form, setForm] = useState({
     flightNo: "",
-    airlineCode: "", // required
+    airlineCode: "",
     origin: "",
     destination: "",
     gate: "",
     scheduledDep: "",
     scheduledArr: "",
-    status: "scheduled", // default
+    status: "scheduled",
   });
-
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+
+  const canCreate = ["admin", "airline"].includes(user?.role);
+
+  useEffect(() => {
+    if (!canCreate) navigate("/"); // redirect unauthorized users
+  }, [canCreate, navigate]);
 
   const submit = async () => {
     setMsg("");
@@ -60,19 +64,10 @@ export default function FlightCreate() {
           Create Flight
         </Typography>
 
-        {msg && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {msg}
-          </Alert>
-        )}
-        {err && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {err}
-          </Alert>
-        )}
+        {msg && <Alert severity="success" sx={{ mb: 2 }}>{msg}</Alert>}
+        {err && <Alert severity="error" sx={{ mb: 2 }}>{err}</Alert>}
 
         <Grid container spacing={2}>
-          {/* Flight No */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
@@ -83,20 +78,16 @@ export default function FlightCreate() {
             />
           </Grid>
 
-          {/* Airline Code */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
               label="Airline Code"
               value={form.airlineCode}
-              onChange={(e) =>
-                setForm({ ...form, airlineCode: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, airlineCode: e.target.value })}
               required
             />
           </Grid>
 
-          {/* Origin */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
@@ -107,20 +98,16 @@ export default function FlightCreate() {
             />
           </Grid>
 
-          {/* Destination */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
               label="Destination (IATA)"
               value={form.destination}
-              onChange={(e) =>
-                setForm({ ...form, destination: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, destination: e.target.value })}
               required
             />
           </Grid>
 
-          {/* Gate */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
@@ -130,7 +117,6 @@ export default function FlightCreate() {
             />
           </Grid>
 
-          {/* Scheduled Departure */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
@@ -138,14 +124,11 @@ export default function FlightCreate() {
               label="Scheduled Departure"
               InputLabelProps={{ shrink: true }}
               value={form.scheduledDep}
-              onChange={(e) =>
-                setForm({ ...form, scheduledDep: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, scheduledDep: e.target.value })}
               required
             />
           </Grid>
 
-          {/* Scheduled Arrival */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
@@ -153,14 +136,11 @@ export default function FlightCreate() {
               label="Scheduled Arrival"
               InputLabelProps={{ shrink: true }}
               value={form.scheduledArr}
-              onChange={(e) =>
-                setForm({ ...form, scheduledArr: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, scheduledArr: e.target.value })}
               required
             />
           </Grid>
 
-          {/* Status - dropdown */}
           <Grid item xs={12} md={4}>
             <TextField
               select
@@ -183,6 +163,7 @@ export default function FlightCreate() {
             variant="contained"
             onClick={submit}
             disabled={
+              !canCreate ||
               !form.flightNo ||
               !form.airlineCode ||
               !form.origin ||

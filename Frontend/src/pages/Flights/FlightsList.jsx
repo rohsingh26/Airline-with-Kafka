@@ -1,25 +1,24 @@
 import React, { useEffect, useState } from "react";
 import {
-  Box,
+  Card,
+  CardContent,
+  Typography,
   Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
   IconButton,
-  Tooltip,
   TextField,
-  Button,
   MenuItem,
+  Button,
   Chip,
-  Card,
-  CardContent,
-  Typography,
+  Alert,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import * as api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import * as api from "../../services/api";
 
 const statusOptions = [
   { value: "scheduled", label: "Scheduled" },
@@ -30,212 +29,138 @@ const statusOptions = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
-// Map status to color styles
-const statusStyles = {
-  scheduled: {
-    label: "Scheduled",
-    bg: "#e8f5e9",
-    text: "#2e7d32",
-  },
-  boarding: {
-    label: "Boarding",
-    bg: "#e3f2fd",
-    text: "#1565c0",
-  },
-  departed: {
-    label: "Departed",
-    bg: "#ede7f6",
-    text: "#4527a0",
-  },
-  arrived: {
-    label: "Arrived",
-    bg: "#e3f2fd",
-    text: "#0277bd",
-  },
-  delayed: {
-    label: "Delayed",
-    bg: "#fff3e0",
-    text: "#ef6c00",
-  },
-  cancelled: {
-    label: "Cancelled",
-    bg: "#ffebee",
-    text: "#c62828",
-  },
+const statusColors = {
+  scheduled: { bg: "#e3f2fd", color: "#1565c0" },
+  boarding: { bg: "#fff3e0", color: "#ef6c00" },
+  departed: { bg: "#e8f5e9", color: "#2e7d32" },
+  arrived: { bg: "#ede7f6", color: "#4527a0" },
+  delayed: { bg: "#fff3e0", color: "#ef6c00" },
+  cancelled: { bg: "#ffebee", color: "#c62828" },
 };
 
 export default function FlightsList({ embedded = false }) {
   const { token, user } = useAuth();
-  const [rows, setRows] = useState([]);
-  const [editRow, setEditRow] = useState(null);
-  const [patch, setPatch] = useState({ gate: "", status: "" });
+  const [flights, setFlights] = useState([]);
+  const [err, setErr] = useState("");
+  const [editFlight, setEditFlight] = useState(null);
+  const [patch, setPatch] = useState({ status: "", gate: "" });
 
-  const canEdit = user?.role === "admin" || user?.role === "airline";
-  const canDelete = user?.role === "admin";
+  const canEdit = ["admin", "airline"].includes(user?.role);
 
-  const load = async () => {
-    const data = await api.listFlights(token);
-    setRows(data);
+  const loadFlights = async () => {
+    try {
+      const data = await api.listFlights(token);
+      setFlights(data);
+    } catch {
+      setErr("Failed to load flights");
+    }
   };
 
   useEffect(() => {
-    load();
-  }, []); // eslint-disable-line
+    loadFlights();
+  }, []);
 
-  const startEdit = (r) => {
-    setEditRow(r);
-    setPatch({ gate: r.gate || "", status: r.status || "scheduled" });
+  const startEdit = (flight) => {
+    if (!canEdit) return;
+    setEditFlight(flight._id);
+    setPatch({ status: flight.status, gate: flight.gate || "" });
   };
 
-  const save = async () => {
-    await api.updateFlight(editRow._id, patch, token);
-    setEditRow(null);
-    await load();
+  const saveEdit = async () => {
+    try {
+      await api.updateFlight(editFlight, patch, token);
+      setEditFlight(null);
+      await loadFlights();
+    } catch {
+      alert("Failed to update flight");
+    }
   };
 
-  const remove = async (r) => {
-    if (!confirm(`Delete flight ${r.flightNo}?`)) return;
-    await api.deleteFlight(r._id, token);
-    await load();
+  const handleDelete = async (id) => {
+    if (!canEdit) return;
+    if (!window.confirm("Delete this flight?")) return;
+    try {
+      await api.deleteFlight(id, token);
+      setFlights((prev) => prev.filter((f) => f._id !== id));
+    } catch {
+      alert("Failed to delete flight");
+    }
   };
+
+  if (err) return <Alert severity="error">{err}</Alert>;
+  if (flights.length === 0)
+    return <Alert severity="info">No flights found.</Alert>;
 
   return (
-    <Card sx={{ borderRadius: 3, boxShadow: 3}}>
+    <Card sx={{ borderRadius: 3 }}>
       <CardContent>
-        
-        <Box sx={{ overflowX: "auto" }}>
-          <Table
-            size={embedded ? "small" : "medium"}
-            sx={{
-              border: "1px solid #e0e0e0",
-              borderRadius: 2,
-              overflow: "hidden",
-              "& th": {
-                backgroundColor: "#f5f5f5",
-                fontWeight: 700,
-              },
-              "& tr:nth-of-type(odd)": {
-                backgroundColor: "#fafafa",
-              },
-            }}
-          >
-            <TableHead>
-              <TableRow>
-                <TableCell>Flight No</TableCell>
-                <TableCell>Route</TableCell>
-                <TableCell>Gate</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Sched Dep</TableCell>
-                <TableCell>Sched Arr</TableCell>
-                {canEdit && <TableCell align="right">Actions</TableCell>}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((r) => {
-                const style = statusStyles[r.status] || {};
-                return (
-                  <TableRow key={r._id}>
-                    <TableCell>{r.flightNo}</TableCell>
-                    <TableCell>
-                      {r.origin} → {r.destination}
-                    </TableCell>
-                    <TableCell>
-                      {editRow?._id === r._id ? (
-                        <TextField
-                          size="small"
-                          value={patch.gate}
-                          onChange={(e) =>
-                            setPatch({ ...patch, gate: e.target.value })
-                          }
-                        />
-                      ) : (
-                        r.gate || "—"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {editRow?._id === r._id ? (
-                        <TextField
-                          select
-                          size="small"
-                          value={patch.status}
-                          onChange={(e) =>
-                            setPatch({ ...patch, status: e.target.value })
-                          }
-                        >
-                          {statusOptions.map((opt) => (
-                            <MenuItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      ) : (
-                        <Chip
-                          label={style.label || r.status}
-                          sx={{
-                            backgroundColor: style.bg,
-                            color: style.text,
-                            fontWeight: 600,
-                            borderRadius: "8px",
-                            px: 1,
-                          }}
-                          size="small"
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {r.scheduledDep
-                        ? new Date(r.scheduledDep).toLocaleString()
-                        : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {r.scheduledArr
-                        ? new Date(r.scheduledArr).toLocaleString()
-                        : "—"}
-                    </TableCell>
+        <Table size="small" sx={{ "& th": { fontWeight: 700 }, "& tr:nth-of-type(odd)": { backgroundColor: "#fafafa" } }}>
+          <TableHead>
+            <TableRow>
+              <TableCell>Flight No</TableCell>
+              <TableCell>Origin → Destination</TableCell>
+              <TableCell>Gate</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell align="center">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {flights.map((f) => (
+              <TableRow key={f._id}>
+                <TableCell>{f.flightNo}</TableCell>
+                <TableCell>{f.origin} → {f.destination}</TableCell>
 
-                    {canEdit && (
-                      <TableCell align="right">
-                        {editRow?._id === r._id ? (
-                          <>
-                            <Button
-                              onClick={save}
-                              size="small"
-                              variant="contained"
-                              sx={{ mr: 1 }}
-                            >
-                              Save
-                            </Button>
-                            <Button
-                              onClick={() => setEditRow(null)}
-                              size="small"
-                            >
-                              Cancel
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Tooltip title="Edit">
-                              <IconButton onClick={() => startEdit(r)}>
-                                <EditIcon />
-                              </IconButton>
-                            </Tooltip>
-                            {canDelete && (
-                              <Tooltip title="Delete">
-                                <IconButton onClick={() => remove(r)}>
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                          </>
-                        )}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Box>
+                <TableCell>
+                  {editFlight === f._id ? (
+                    <TextField
+                      size="small"
+                      value={patch.gate}
+                      onChange={(e) => setPatch({ ...patch, gate: e.target.value })}
+                    />
+                  ) : (
+                    f.gate || "-"
+                  )}
+                </TableCell>
+
+                <TableCell>
+                  {editFlight === f._id ? (
+                    <TextField
+                      size="small"
+                      select
+                      value={patch.status}
+                      onChange={(e) => setPatch({ ...patch, status: e.target.value })}
+                    >
+                      {statusOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                      ))}
+                    </TextField>
+                  ) : (
+                    <Chip
+                      label={statusOptions.find((s) => s.value === f.status)?.label || f.status}
+                      sx={{ backgroundColor: statusColors[f.status]?.bg, color: statusColors[f.status]?.color, fontWeight: 600, borderRadius: "8px" }}
+                    />
+                  )}
+                </TableCell>
+
+                <TableCell align="center">
+                  {editFlight === f._id ? (
+                    <>
+                      <Button size="small" variant="contained" onClick={saveEdit} sx={{ mr: 1 }}>Save</Button>
+                      <Button size="small" onClick={() => setEditFlight(null)}>Cancel</Button>
+                    </>
+                  ) : (
+                    canEdit && (
+                      <>
+                        <IconButton onClick={() => startEdit(f)}><EditIcon /></IconButton>
+                        <IconButton onClick={() => handleDelete(f._id)}><DeleteIcon color="error" /></IconButton>
+                      </>
+                    )
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

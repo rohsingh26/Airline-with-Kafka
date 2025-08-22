@@ -11,7 +11,7 @@ const router = Router();
 /**
  * List all baggage (with optional filters)
  */
-router.get("/", authRequired(["admin", "baggage", "airline"]), async (req, res, next) => {
+router.get("/", authRequired(["admin", "baggage", "airline", "passenger"]), async (req, res, next) => {
   try {
     const { tagId, flightId } = req.query;
     const query = {};
@@ -31,7 +31,7 @@ router.get("/", authRequired(["admin", "baggage", "airline"]), async (req, res, 
  */
 router.post(
   "/",
-  authRequired(["admin", "baggage", "airline"]),
+  authRequired(["admin", "baggage", "airline", "passenger"]),
   [
     body("tagId").notEmpty().isAlphanumeric().trim().escape(),
     body("flightId")
@@ -106,7 +106,7 @@ router.post(
  */
 router.patch(
   "/:id",
-  authRequired(["admin", "baggage"]),
+  authRequired(["admin", "baggage", "passenger"]),
   [
     body("status").optional().isIn(["checkin", "loaded", "inTransit", "unloaded", "atBelt", "lost"]),
     body("lastLocation").optional().trim().escape(),
@@ -172,7 +172,7 @@ router.patch(
 /**
  * Delete baggage
  */
-router.delete("/:id", authRequired(["admin", "baggage"]), async (req, res, next) => {
+router.delete("/:id", authRequired(["admin", "baggage", "passenger"]), async (req, res, next) => {
   try {
     const { id } = req.params;
     const baggage = await Baggage.findByIdAndDelete(id);
