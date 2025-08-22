@@ -194,8 +194,6 @@ const AddUsers = () => {
         minWidth: "280px",
         maxWidth: 1212,
         mx: "auto",
-        mt: 5,
-        mb: 5,
         display: "flex",
         flexDirection: "column",
         gap: 4, // Space between form and table
