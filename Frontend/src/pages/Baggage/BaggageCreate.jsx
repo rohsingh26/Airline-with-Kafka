@@ -81,7 +81,7 @@ export default function BaggageCreate({ onCreated }) {
   ];
 
   return (
-    <Card sx={{ maxWidth: 800, mx: "auto", borderRadius: 3 }}>
+    <Card sx={{ maxWidth: 1030, mx: "auto", borderRadius: 3}}>
       <CardContent>
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
           Add Baggage
@@ -160,7 +160,7 @@ export default function BaggageCreate({ onCreated }) {
         </Grid>
 
         <Button
-          sx={{ mt: 2 }}
+          sx={{ mt: 4 }}
           variant="contained"
           onClick={submit}
           disabled={!form.tagId || (!form.flightId && flights.length === 0)}

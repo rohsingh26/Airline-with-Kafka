@@ -36,6 +36,23 @@ export async function listUsers(token) {
   return data;
 }
 
+// New: Update a user by ID
+export async function updateUser(id, payload, token) {
+  const { data } = await axios.patch(`${API}/users/${id}`, payload, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return data;
+}
+
+// New: Delete a user by ID
+export async function deleteUser(id, token) {
+  const { data } = await axios.delete(`${API}/users/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return data;
+}
+
+
 // --- flights ---
 export async function createFlight(payload, token) {
   const { data } = await axios.post(`${API}/flights`, payload, {

@@ -12,6 +12,9 @@ import {
   TextField,
   Button,
   MenuItem,
+  Chip,
+  Card,
+  CardContent,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -33,6 +36,15 @@ export default function BaggageList({ embedded = false }) {
     { value: "atBelt", label: "At Belt" },
     { value: "lost", label: "Lost" },
   ];
+
+  const statusColors = {
+    checkin: { bg: "#e3f2fd", color: "#1565c0" },
+    loaded: { bg: "#e8f5e9", color: "#2e7d32" },
+    inTransit: { bg: "#fff3e0", color: "#ef6c00" },
+    unloaded: { bg: "#ede7f6", color: "#4527a0" },
+    atBelt: { bg: "#e0f7fa", color: "#00838f" },
+    lost: { bg: "#ffebee", color: "#c62828" },
+  };
 
   const load = async () => {
     try {
@@ -87,87 +99,118 @@ export default function BaggageList({ embedded = false }) {
     );
 
   return (
-    <Box>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-        Baggage List
-      </Typography>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Tag ID</TableCell>
-            <TableCell>Flight</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Last Location</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {rows.map((b) => (
-            <TableRow
-              key={b._id}
-              sx={{
-                backgroundColor: b.status === "lost" ? "rgba(218, 6, 6, 0.5)" : "inherit",
-              }}
-            >
-              <TableCell>{b.tagId}</TableCell>
-              <TableCell>{b.flightId?.flightNo}</TableCell>
-
-              <TableCell>
-                {editRow === b._id ? (
-                  <TextField
-                    size="small"
-                    select
-                    value={patch.status}
-                    onChange={(e) => setPatch({ ...patch, status: e.target.value })}
-                  >
-                    {statusOptions.map((s) => (
-                      <MenuItem key={s.value} value={s.value}>
-                        {s.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                ) : (
-                  b.status
-                )}
-              </TableCell>
-
-              <TableCell>
-                {editRow === b._id ? (
-                  <TextField
-                    size="small"
-                    value={patch.lastLocation}
-                    onChange={(e) => setPatch({ ...patch, lastLocation: e.target.value })}
-                  />
-                ) : (
-                  b.lastLocation ?? "-"
-                )}
-              </TableCell>
-
-              <TableCell>
-                {editRow === b._id ? (
-                  <>
-                    <Button size="small" variant="contained" onClick={saveEdit} sx={{ mr: 1 }}>
-                      Save
-                    </Button>
-                    <Button size="small" onClick={() => setEditRow(null)}>
-                      Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <IconButton onClick={() => startEdit(b)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(b._id)}>
-                      <DeleteIcon color="error" />
-                    </IconButton>
-                  </>
-                )}
-              </TableCell>
+    <Card sx={{ borderRadius: 3, boxShadow: 3,}}>
+      <CardContent>
+        <Table
+          size="small"
+          sx={{
+            border: "1px solid #e0e0e0",
+            borderRadius: 2,
+            overflow: "hidden",
+            "& th": {
+              backgroundColor: "#f5f5f5",
+              fontWeight: 700,
+            },
+            "& tr:nth-of-type(odd)": {
+              backgroundColor: "#fafafa",
+            },
+          }}
+        >
+          <TableHead>
+            <TableRow>
+              <TableCell>Tag ID</TableCell>
+              <TableCell>Flight</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Last Location</TableCell>
+              <TableCell align="center">Actions</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Box>
+          </TableHead>
+          <TableBody>
+            {rows.map((b) => (
+              <TableRow key={b._id}>
+                <TableCell>{b.tagId}</TableCell>
+                <TableCell>{b.flightId?.flightNo}</TableCell>
+
+                <TableCell>
+                  {editRow === b._id ? (
+                    <TextField
+                      size="small"
+                      select
+                      value={patch.status}
+                      onChange={(e) =>
+                        setPatch({ ...patch, status: e.target.value })
+                      }
+                    >
+                      {statusOptions.map((s) => (
+                        <MenuItem key={s.value} value={s.value}>
+                          {s.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  ) : (
+                    <Chip
+                      label={
+                        statusOptions.find((s) => s.value === b.status)?.label ||
+                        b.status
+                      }
+                      sx={{
+                        backgroundColor: statusColors[b.status]?.bg,
+                        color: statusColors[b.status]?.color,
+                        fontWeight: 600,
+                        borderRadius: "8px",
+                      }}
+                    />
+                  )}
+                </TableCell>
+
+                <TableCell>
+                  {editRow === b._id ? (
+                    <TextField
+                      size="small"
+                      value={patch.lastLocation}
+                      onChange={(e) =>
+                        setPatch({ ...patch, lastLocation: e.target.value })
+                      }
+                    />
+                  ) : (
+                    b.lastLocation ?? "-"
+                  )}
+                </TableCell>
+
+                <TableCell align="center">
+                  {editRow === b._id ? (
+                    <>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={saveEdit}
+                        sx={{ mr: 1 }}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={() => setEditRow(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <IconButton onClick={() => startEdit(b)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleDelete(b._id)}>
+                        <DeleteIcon color="error" />
+                      </IconButton>
+                    </>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }

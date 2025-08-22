@@ -33,9 +33,8 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:1000px)");
-  const isTiny = useMediaQuery("(max-width:500px)"); // 👈 for username hiding
+  const isTiny = useMediaQuery("(max-width:500px)"); // for username hiding
 
-  // Removed Search Flight from here
   const menuItems = [
     { to: "/", label: "Dashboard", icon: <DashboardIcon /> },
     { to: "/flights", label: "Flights", icon: <FlightTakeoffIcon /> },
@@ -44,22 +43,16 @@ export default function Layout() {
 
   const canCreateFlight = user?.role === "admin" || user?.role === "airline";
   const canCreateBaggage = ["admin", "airline", "baggage"].includes(user?.role);
+  const isAdmin = user?.role === "admin";
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#f6f7fb" }}>
-      <AppBar
-        position="sticky"
-        elevation={1}
-        sx={{ bgcolor: "#1A1A2E", color: "#fff" }}
-      >
+    <Box sx={{ minHeight: "100vh", minWidth: 330, bgcolor: "#f6f7fb" }}>
+      <AppBar position="sticky" elevation={1} sx={{ bgcolor: "#1A1A2E", color: "#fff" }}>
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {isMobile && (
               <>
-                <IconButton
-                  color="inherit"
-                  onClick={(e) => setMenuAnchor(e.currentTarget)}
-                >
+                <IconButton color="inherit" onClick={(e) => setMenuAnchor(e.currentTarget)}>
                   <MenuIcon />
                 </IconButton>
                 <Menu
@@ -115,6 +108,18 @@ export default function Layout() {
                       <Typography sx={{ ml: 1 }}>Add Baggage</Typography>
                     </MenuItem>
                   )}
+
+                  {isAdmin && (
+                    <MenuItem
+                      onClick={() => {
+                        navigate("/admin/add-users");
+                        setMenuAnchor(null);
+                      }}
+                    >
+                      <AddIcon fontSize="small" />
+                      <Typography sx={{ ml: 1 }}>Add Users</Typography>
+                    </MenuItem>
+                  )}
                 </Menu>
               </>
             )}
@@ -124,7 +129,7 @@ export default function Layout() {
             </Typography>
           </Box>
 
-          {/* Navbar Menu for desktop */}
+          {/* Desktop navbar */}
           {!isMobile && (
             <Box sx={{ display: "flex", gap: 2 }}>
               {menuItems.map((m) => (
@@ -151,10 +156,7 @@ export default function Layout() {
                   sx={{
                     color: "#D4AF37",
                     fontWeight: 600,
-                    "&:hover": {
-                      color: "#fff",
-                      bgcolor: "rgba(212,175,55,0.1)",
-                    },
+                    "&:hover": { color: "#fff", bgcolor: "rgba(212,175,55,0.1)" },
                   }}
                 >
                   New Flight
@@ -169,13 +171,25 @@ export default function Layout() {
                   sx={{
                     color: "#D4AF37",
                     fontWeight: 600,
-                    "&:hover": {
-                      color: "#fff",
-                      bgcolor: "rgba(212,175,55,0.1)",
-                    },
+                    "&:hover": { color: "#fff", bgcolor: "rgba(212,175,55,0.1)" },
                   }}
                 >
                   Add Baggage
+                </Button>
+              )}
+
+              {isAdmin && (
+                <Button
+                  component={Link}
+                  to="/admin/add-users"
+                  startIcon={<AddIcon />}
+                  sx={{
+                    color: "#D4AF37",
+                    fontWeight: 600,
+                    "&:hover": { color: "#fff", bgcolor: "rgba(212,175,55,0.1)" },
+                  }}
+                >
+                  Add Users
                 </Button>
               )}
             </Box>
@@ -183,7 +197,6 @@ export default function Layout() {
 
           {/* Profile Menu */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            {/* Show name only if screen is not tiny */}
             {!isTiny && (
               <Typography variant="body1" sx={{ fontWeight: 600, color: "#fff" }}>
                 {user?.name}
@@ -191,9 +204,7 @@ export default function Layout() {
             )}
 
             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small">
-              <Avatar
-                sx={{ bgcolor: "#D4AF37", color: "#1A1A2E", fontWeight: 700 }}
-              >
+              <Avatar sx={{ bgcolor: "#D4AF37", color: "#1A1A2E", fontWeight: 700 }}>
                 {user?.name?.[0]?.toUpperCase() || "U"}
               </Avatar>
             </IconButton>
@@ -216,7 +227,6 @@ export default function Layout() {
                 },
               }}
             >
-              {/* Show full name only in tiny mode */}
               {isTiny && (
                 <MenuItem disabled>
                   <Typography variant="body1" sx={{ fontWeight: 600 }}>
@@ -228,10 +238,7 @@ export default function Layout() {
               <MenuItem disabled>
                 <Box>
                   <Typography variant="body2">{user?.email}</Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "#D4AF37", fontWeight: 600 }}
-                  >
+                  <Typography variant="caption" sx={{ color: "#D4AF37", fontWeight: 600 }}>
                     {user?.role?.toUpperCase()}
                   </Typography>
                 </Box>
@@ -245,8 +252,7 @@ export default function Layout() {
                   setAnchorEl(null);
                 }}
               >
-                <EditIcon fontSize="small" style={{ marginRight: 8 }} /> Edit
-                Profile
+                <EditIcon fontSize="small" style={{ marginRight: 8 }} /> Edit Profile
               </MenuItem>
 
               {user?.role === "passenger" && (
@@ -263,10 +269,7 @@ export default function Layout() {
 
               <Divider sx={{ borderColor: "rgba(255,255,255,0.2)" }} />
 
-              <MenuItem
-                onClick={() => logout()}
-                sx={{ color: "#ff4d4d", fontWeight: 600 }}
-              >
+              <MenuItem onClick={() => logout()} sx={{ color: "#ff4d4d", fontWeight: 600 }}>
                 <LogoutIcon fontSize="small" style={{ marginRight: 8 }} /> Logout
               </MenuItem>
             </Menu>
@@ -275,14 +278,11 @@ export default function Layout() {
       </AppBar>
 
       <Box sx={{ p: 3 }}>
+        {/* This will render AddUsers or other pages */}
         <Outlet />
       </Box>
 
-      <ProfileDialog
-        open={openProfile}
-        onClose={() => setOpenProfile(false)}
-        user={user}
-      />
+      <ProfileDialog open={openProfile} onClose={() => setOpenProfile(false)} user={user} />
     </Box>
   );
 }

@@ -55,4 +55,67 @@ router.get('/', authRequired(['admin']), async (req, res, next) => {
   }
 });
 
+/**
+ * ✏️ Admin: Update a user by ID (name, email, role)
+ */
+router.patch(
+  '/:id',
+  authRequired(['admin']),
+  [
+    body('name').optional().isString().trim().isLength({ min: 2 }).withMessage('Name too short'),
+    body('email').optional().isEmail().withMessage('Invalid email format'),
+    body('role').optional().isIn(['airline', 'baggage', 'admin', 'passenger']).withMessage('Invalid role'), // Expanded roles for backend
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { id } = req.params;
+      const { name, email, role } = req.body;
+
+      // Only allow updating name, email, role. Password update should be separate.
+      const updateFields = {};
+      if (name) updateFields.name = name;
+      if (email) updateFields.email = email;
+      if (role) updateFields.role = role;
+
+      const updatedUser = await User.findByIdAndUpdate(
+        id,
+        { $set: updateFields },
+        { new: true, runValidators: true } // Return new doc and run schema validators
+      ).lean();
+
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json({ _id: updatedUser._id, name: updatedUser.name, email: updatedUser.email, role: updatedUser.role });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * 🗑️ Admin: Delete a user by ID
+ */
+router.delete('/:id', authRequired(['admin']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const deletedUser = await User.findByIdAndDelete(id).lean();
+
+    if (!deletedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'User deleted successfully', _id: deletedUser._id });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

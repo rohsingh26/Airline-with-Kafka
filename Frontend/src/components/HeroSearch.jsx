@@ -8,7 +8,7 @@ export default function HeroSearch() {
     <Box
       sx={{
         position: "relative",
-        height: 420,
+        height: 350,
         borderRadius: 3,
         overflow: "hidden",
         mb: 4,

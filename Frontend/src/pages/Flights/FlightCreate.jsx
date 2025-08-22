@@ -54,7 +54,7 @@ export default function FlightCreate() {
   };
 
   return (
-    <Card sx={{ maxWidth: 900, mx: "auto", borderRadius: 3 }}>
+    <Card sx={{ maxWidth: 1212, mx: "auto", borderRadius: 3 }}>
       <CardContent>
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
           Create Flight
@@ -178,7 +178,7 @@ export default function FlightCreate() {
           </Grid>
         </Grid>
 
-        <Box sx={{ mt: 2, textAlign: "right" }}>
+        <Box sx={{ mt: 4, textAlign: "left" }}>
           <Button
             variant="contained"
             onClick={submit}

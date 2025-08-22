@@ -2,13 +2,14 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
 import Dashboard from "./pages/Dashboard";
-import FlightsPage from "./pages/Flights/FlightsPage";   // ✅ Import FlightsPage
+import FlightsPage from "./pages/Flights/FlightsPage";
 import FlightCreate from "./pages/Flights/FlightCreate";
 import FlightSearch from "./pages/Flights/FlightSearch";
 import FlightsList from "./pages/Flights/FlightsList";
 import BaggageList from "./pages/Baggage/BaggageList";
 import BaggageCreate from "./pages/Baggage/BaggageCreate";
 import MyFlights from "./pages/Passengers/MyFlights";
+import AddUsers from "./pages/Admin/AddUsers"; // ✅ AddUsers page
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 
@@ -28,7 +29,7 @@ function App() {
         <Route index element={<Dashboard />} />
 
         {/* Flights */}
-        <Route path="flights" element={<FlightsPage />} />   {/* ✅ Use FlightsPage here */}
+        <Route path="flights" element={<FlightsPage />} />
         <Route path="flights/create" element={<FlightCreate />} />
         <Route path="flights/search" element={<FlightSearch />} />
         <Route path="flights/list" element={<FlightsList />} />
@@ -39,6 +40,9 @@ function App() {
 
         {/* Passenger */}
         <Route path="my-flights" element={<MyFlights />} />
+
+        {/* Admin */}
+        <Route path="admin/add-users" element={<AddUsers />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

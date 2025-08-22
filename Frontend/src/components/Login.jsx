@@ -234,9 +234,6 @@ const Login = () => {
                   label="Role"
                 >
                   <MenuItem value="passenger">Passenger</MenuItem>
-                  <MenuItem value="airline">Airline Staff</MenuItem>
-                  <MenuItem value="baggage">Baggage Staff</MenuItem>
-                  <MenuItem value="admin">Admin</MenuItem>
                 </TextField>
 
                 <Button

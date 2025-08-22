@@ -15,7 +15,7 @@ export default function Dashboard() {
       <HeroSearch />
 
       {/* Why Choose Section */}
-      <Box sx={{ my: 5 }}>
+      <Box>
         <FeatureCards />
       </Box>
 
@@ -25,7 +25,7 @@ export default function Dashboard() {
           <Card sx={{ borderRadius: 3, mb: 2 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-                Active Flights
+                Flights List
               </Typography>
               <FlightsList embedded />
             </CardContent>
@@ -36,7 +36,7 @@ export default function Dashboard() {
           <Card sx={{ borderRadius: 3 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-                Baggage (Recent)
+                Baggage List
               </Typography>
               <BaggageList embedded />
             </CardContent>
