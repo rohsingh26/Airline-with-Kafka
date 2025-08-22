@@ -34,9 +34,17 @@ export default function BaggageCreate({ onCreated }) {
     }
   };
 
+  // Load flights on mount
   useEffect(() => {
     loadFlights();
-  }, []); // eslint-disable-line
+  }, []);
+
+  // Set default flight if flights exist
+  useEffect(() => {
+    if (flights.length > 0 && !form.flightId) {
+      setForm((prev) => ({ ...prev, flightId: flights[0]._id }));
+    }
+  }, [flights]);
 
   const submit = async () => {
     setMsg("");
@@ -52,7 +60,7 @@ export default function BaggageCreate({ onCreated }) {
       setMsg("Baggage created / assigned");
       setForm({
         tagId: "",
-        flightId: "",
+        flightId: flights.length > 0 ? flights[0]._id : "",
         weight: "",
         status: "checkin",
         lastLocation: "",
@@ -62,6 +70,15 @@ export default function BaggageCreate({ onCreated }) {
       setErr(e?.response?.data?.error || "Failed to create baggage");
     }
   };
+
+  const statusOptions = [
+    { value: "checkin", label: "Check-in" },
+    { value: "loaded", label: "Loaded" },
+    { value: "inTransit", label: "In Transit" },
+    { value: "unloaded", label: "Unloaded" },
+    { value: "atBelt", label: "At Belt" },
+    { value: "lost", label: "Lost" },
+  ];
 
   return (
     <Card sx={{ maxWidth: 800, mx: "auto", borderRadius: 3 }}>
@@ -88,6 +105,16 @@ export default function BaggageCreate({ onCreated }) {
               label="Flight"
               value={form.flightId}
               onChange={(e) => setForm({ ...form, flightId: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+              SelectProps={{
+                renderValue: (selected) => {
+                  if (!selected) return "Add Flight";
+                  const flight = flights.find((f) => f._id === selected);
+                  return flight
+                    ? `${flight.flightNo} — ${flight.origin}→${flight.destination}`
+                    : "Add Flight";
+                },
+              }}
             >
               {flights.map((f) => (
                 <MenuItem key={f._id} value={f._id}>
@@ -106,12 +133,19 @@ export default function BaggageCreate({ onCreated }) {
           </Grid>
           <Grid item xs={12} md={6}>
             <TextField
+              select
               fullWidth
               label="Status"
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
-              placeholder="checkin|loaded|inTransit|unloaded|atBelt|lost"
-            />
+              InputLabelProps={{ shrink: true }}
+            >
+              {statusOptions.map((s) => (
+                <MenuItem key={s.value} value={s.value}>
+                  {s.label}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid item xs={12} md={6}>
             <TextField
@@ -129,7 +163,7 @@ export default function BaggageCreate({ onCreated }) {
           sx={{ mt: 2 }}
           variant="contained"
           onClick={submit}
-          disabled={!form.tagId || !form.flightId}
+          disabled={!form.tagId || (!form.flightId && flights.length === 0)}
         >
           Save
         </Button>

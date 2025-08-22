@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Baggage from "./Baggage.js";
 
 const flightSchema = new mongoose.Schema(
   {
@@ -25,6 +26,19 @@ const flightSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Cascade delete baggage when a flight is deleted
+flightSchema.pre("findOneAndDelete", async function (next) {
+  try {
+    const flight = await this.model.findOne(this.getFilter());
+    if (flight) {
+      await Baggage.deleteMany({ flightId: flight._id });
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 const Flight = mongoose.model("Flight", flightSchema);
 
