@@ -20,24 +20,40 @@ import { useAuth } from "../context/AuthContext.jsx";
 const COLORS = ["#2e7d32", "#c62828"]; // efficiency pie colors
 const OVERVIEW_COLORS = { Total: "#1565c0", Active: "#2e7d32" };
 const ISSUES_COLORS = { Delayed: "#8300efff", Cancelled: "#c62828" };
+const EMPLOYEE_COLORS = {
+  Total: "#D4AF37",
+  Airline: "#1565c0",
+  Baggage: "#ef6c00",
+};
+const BAGGAGE_COLORS = ["#2e7d32", "#c62828"]; // green = ok, red = lost
 
 export default function FeatureCards() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [flights, setFlights] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [baggage, setBaggage] = useState([]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await api.listFlights(token);
-        setFlights(data);
+        const flightData = await api.listFlights(token);
+        setFlights(flightData);
+
+        const baggageData = await api.listBaggage(token);
+        setBaggage(baggageData);
+
+        if (user?.role === "admin") {
+          const usersData = await api.listUsers(token);
+          setUsers(usersData);
+        }
       } catch (e) {
-        console.error("Failed to load flights", e);
+        console.error("Failed to load dashboard data", e);
       }
     };
     load();
-  }, [token]);
+  }, [token, user]);
 
-  // --- Metrics ---
+  // --- Flight Metrics ---
   const now = new Date();
   const totalFlights = flights.length;
   const activeFlights = flights.filter(
@@ -63,6 +79,30 @@ export default function FeatureCards() {
     { name: "Issues", Delayed: delayedFlights, Cancelled: cancelledFlights },
   ];
 
+  // --- Employee Metrics (admin only) ---
+  const airlineStaff = users.filter((u) => u.role === "airline").length;
+  const baggageStaff = users.filter((u) => u.role === "baggage").length;
+  const totalStaff = airlineStaff + baggageStaff;
+
+  const employeeData = [
+    {
+      name: "Staff",
+      Total: totalStaff,
+      Airline: airlineStaff,
+      Baggage: baggageStaff,
+    },
+  ];
+
+  // --- Baggage Metrics ---
+  const totalBaggage = baggage.length;
+  const lostBaggage = baggage.filter((b) => b.status === "lost").length;
+  const okBaggage = totalBaggage - lostBaggage;
+
+  const baggageData = [
+    { name: "Safe", value: okBaggage },
+    { name: "Lost", value: lostBaggage },
+  ];
+
   return (
     <Grid container spacing={3}>
       {/* Total / Active Flights */}
@@ -83,7 +123,15 @@ export default function FeatureCards() {
             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
               Flights Overview
             </Typography>
-            <Box sx={{ marginLeft: -6, flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <Box
+              sx={{
+                marginLeft: -6,
+                flex: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={flightsOverviewData} barSize={45}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -130,7 +178,15 @@ export default function FeatureCards() {
             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
               Flight Issues
             </Typography>
-            <Box sx={{ marginLeft: -6, flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <Box
+              sx={{
+                marginLeft: -6,
+                flex: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={issuesData} barSize={45}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -177,7 +233,14 @@ export default function FeatureCards() {
             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
               Operational Efficiency
             </Typography>
-            <Box sx={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
@@ -186,8 +249,8 @@ export default function FeatureCards() {
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    innerRadius={40}
-                    outerRadius={70}
+                    innerRadius={50}
+                    outerRadius={90}
                     paddingAngle={3}
                   >
                     {pieData.map((entry, index) => (
@@ -203,16 +266,147 @@ export default function FeatureCards() {
             </Box>
             <Typography
               variant="h5"
-              sx={{ mt: 1, fontWeight: 700, color: "#2e7d32", textAlign: "center" }}
+              sx={{
+                mt: 1,
+                fontWeight: 700,
+                color: "#2e7d32",
+                textAlign: "center",
+              }}
             >
               {efficiency.toFixed(1)}%
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ textAlign: "center" }}
+            >
               of active flights operating without issues
             </Typography>
           </CardContent>
         </Card>
       </Grid>
+
+      {/* Baggage Pie Chart */}
+      <Grid item xs={12} md={6}>
+        <Card
+            sx={{
+            borderRadius: 4,
+            p: 2,
+            minHeight: 350,
+            minWidth: 300,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            }}
+        >
+            <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
+                Baggage Status
+            </Typography>
+            <Box
+                sx={{
+                flex: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                }}
+            >
+                <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                    <Pie
+                    data={baggageData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    paddingAngle={2}
+                    dataKey="value"
+                    >
+                    {baggageData.map((entry, index) => (
+                        <Cell
+                        key={`cell-${index}`}
+                        fill={BAGGAGE_COLORS[index % BAGGAGE_COLORS.length]}
+                        />
+                    ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                </PieChart>
+                </ResponsiveContainer>
+            </Box>
+            <Typography
+                variant="h6"
+                sx={{ mt: 1, fontWeight: 600, textAlign: "center" }}
+            >
+                {lostBaggage} Lost / {totalBaggage} Total
+            </Typography>
+            </CardContent>
+        </Card>
+      </Grid>
+
+      {/* Employee Details (Admin only) */}
+      {user?.role === "admin" && (
+        <Grid item xs={12} md={6}>
+          <Card
+            sx={{
+              borderRadius: 4,
+              p: 2,
+              minHeight: 350,
+              minWidth: 300,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            }}
+          >
+            <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
+                Employee Details
+              </Typography>
+              <Box
+                sx={{
+                  marginLeft: -6,
+                  flex: 1,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={employeeData} barSize={45}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="name" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip cursor={{ fill: "rgba(0,0,0,0.05)" }} />
+                    <Legend />
+                    <Bar
+                      dataKey="Total"
+                      fill={EMPLOYEE_COLORS.Total}
+                      radius={[8, 8, 0, 0]}
+                    >
+                      <LabelList dataKey="Total" position="top" fill="#333" />
+                    </Bar>
+                    <Bar
+                      dataKey="Airline"
+                      fill={EMPLOYEE_COLORS.Airline}
+                      radius={[8, 8, 0, 0]}
+                    >
+                      <LabelList dataKey="Airline" position="top" fill="#333" />
+                    </Bar>
+                    <Bar
+                      dataKey="Baggage"
+                      fill={EMPLOYEE_COLORS.Baggage}
+                      radius={[8, 8, 0, 0]}
+                    >
+                      <LabelList dataKey="Baggage" position="top" fill="#333" />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
     </Grid>
   );
 }

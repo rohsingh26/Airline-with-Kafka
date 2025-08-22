@@ -123,9 +123,19 @@ export default function Layout() {
               </>
             )}
 
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "#D4AF37" }}>
-              Airline
+            <Typography
+                variant="h6"
+                sx={{
+                    fontWeight: 700,
+                    color: "#D4AF37",
+                    cursor: "pointer", // make it look clickable
+                    "&:hover": { color: "#fff" }, // hover effect like dashboard links
+                }}
+                onClick={() => navigate("/")}
+                >
+                Airline
             </Typography>
+
           </Box>
 
           {/* Desktop navbar */}
@@ -149,48 +159,48 @@ export default function Layout() {
 
               {canCreateFlight && (
                 <Button
-                  component={Link}
-                  to="/flights/create"
-                  startIcon={<AddIcon />}
-                  sx={{
-                    color: "#D4AF37",
+                    component={Link}
+                    to="/flights/create"
+                    startIcon={<AddIcon />}
+                    sx={{
+                    color: location.pathname === "/flights/create" ? "#D4AF37" : "#fce69dff",
                     fontWeight: 600,
-                    "&:hover": { color: "#fff", bgcolor: "rgba(212,175,55,0.1)" },
-                  }}
+                    "&:hover": { bgcolor: "rgba(212,175,55,0.1)", color: "#D4AF37" },
+                    }}
                 >
-                  New Flight
+                    New Flight
                 </Button>
-              )}
+                )}
 
-              {canCreateBaggage && (
+                {canCreateBaggage && (
                 <Button
-                  component={Link}
-                  to="/baggage/create"
-                  startIcon={<WorkIcon />}
-                  sx={{
-                    color: "#D4AF37",
+                    component={Link}
+                    to="/baggage/create"
+                    startIcon={<WorkIcon />}
+                    sx={{
+                    color: location.pathname === "/baggage/create" ? "#D4AF37" : "#fce69dff",
                     fontWeight: 600,
-                    "&:hover": { color: "#fff", bgcolor: "rgba(212,175,55,0.1)" },
-                  }}
+                    "&:hover": { bgcolor: "rgba(212,175,55,0.1)", color: "#D4AF37" },
+                    }}
                 >
-                  Add Baggage
+                    Add Baggage
                 </Button>
-              )}
+                )}
 
-              {isAdmin && (
+                {isAdmin && (
                 <Button
-                  component={Link}
-                  to="/admin/add-users"
-                  startIcon={<AddIcon />}
-                  sx={{
-                    color: "#D4AF37",
+                    component={Link}
+                    to="/admin/add-users"
+                    startIcon={<AddIcon />}
+                    sx={{
+                    color: location.pathname === "/admin/add-users" ? "#D4AF37" : "#fce69dff",
                     fontWeight: 600,
-                    "&:hover": { color: "#fff", bgcolor: "rgba(212,175,55,0.1)" },
-                  }}
+                    "&:hover": { bgcolor: "rgba(212,175,55,0.1)", color: "#D4AF37" },
+                    }}
                 >
-                  Add Users
+                    Add Users
                 </Button>
-              )}
+                )}
             </Box>
           )}
 
@@ -234,7 +244,7 @@ export default function Layout() {
                 </MenuItem>
               )}
 
-              <MenuItem disabled>
+              <MenuItem>
                 <Box>
                   <Typography variant="body2">{user?.email}</Typography>
                   <Typography variant="caption" sx={{ color: "#D4AF37", fontWeight: 600 }}>

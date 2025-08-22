@@ -154,7 +154,7 @@ router.patch('/:id',
 /**
  * ❌ Delete flight
  */
-router.delete('/:id', authRequired(['admin']), async (req, res, next) => {
+router.delete('/:id', authRequired(['admin','airline']), async (req, res, next) => {
   try {
     const { id } = req.params;
     const deletedFlight = await Flight.findByIdAndDelete(id);

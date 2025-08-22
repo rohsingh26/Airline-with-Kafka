@@ -12,6 +12,7 @@ import MyFlights from "./pages/Passengers/MyFlights";
 import AddUsers from "./pages/Admin/AddUsers"; 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
+import { Typography } from "@mui/material";
 
 function App() {
   return (
@@ -32,7 +33,7 @@ function App() {
         <Route
           path="flights"
           element={
-            <ProtectedRoute roles={["admin", "airline", "passenger"]}>
+            <ProtectedRoute roles={["admin", "airline", "baggage", "passenger"]}>
               <FlightsPage />
             </ProtectedRoute>
           }
@@ -48,7 +49,7 @@ function App() {
         <Route
           path="flights/search"
           element={
-            <ProtectedRoute roles={["admin", "airline", "passenger"]}>
+            <ProtectedRoute roles={["admin", "airline","baggage", "passenger"]}>
               <FlightSearch />
             </ProtectedRoute>
           }
@@ -56,7 +57,7 @@ function App() {
         <Route
           path="flights/list"
           element={
-            <ProtectedRoute roles={["admin", "airline", "passenger"]}>
+            <ProtectedRoute roles={["admin", "airline", "baggage", "passenger"]}>
               <FlightsList />
             </ProtectedRoute>
           }
@@ -67,6 +68,9 @@ function App() {
           path="baggage"
           element={
             <ProtectedRoute roles={["admin", "airline", "baggage", "passenger"]}>
+              <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, ml:1 }}>
+                Baggages
+              </Typography>
               <BaggageList />
             </ProtectedRoute>
           }

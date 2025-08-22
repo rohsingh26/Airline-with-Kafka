@@ -192,6 +192,7 @@ const AddUsers = () => {
     <Box
       sx={{
         minWidth: "280px",
+        maxWidth: 1212,
         mx: "auto",
         mt: 5,
         mb: 5,
@@ -205,16 +206,16 @@ const AddUsers = () => {
       <Paper
         elevation={6} // Stronger shadow
         sx={{
-          p: { xs: 3, sm: 4, md: 5 }, // Responsive padding
+          p: { xs: 2, sm: 2, md: 4 }, // Responsive padding
           borderRadius: 3,
           backgroundColor: 'background.paper', // Use theme background color
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center', // Center content horizontally
+           // Center content horizontally
         }}
       >
-        <Typography variant="h4" fontWeight={700} mb={4} textAlign="center" color="#5a4a1bff">
-          Add Staff User
+        <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
+            Add Staff User
         </Typography>
 
         {error && (
@@ -328,33 +329,36 @@ const AddUsers = () => {
                   <TableCell sx={{ fontWeight: 700, color: 'primary.contrastText', width: "120px" }} align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
-              <TableBody>
-                {users.map((u) => (
-                  <StyledTableRow key={u._id}>
-                    <TableCell>{u.name}</TableCell>
-                    <TableCell>{u.email}</TableCell>
-                    <TableCell>{u.role}</TableCell>
-                    <TableCell align="center">
-                      <IconButton
-                        aria-label="edit"
-                        color="primary"
-                        onClick={() => handleEditClick(u)}
-                        size="small"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        aria-label="delete"
-                        color="error"
-                        onClick={() => handleDeleteClick(u._id)}
-                        size="small"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </StyledTableRow>
-                ))}
-              </TableBody>
+                <TableBody>
+                    {users.map((u) => (
+                        <StyledTableRow key={u._id}>
+                        <TableCell>{u.name}</TableCell>
+                        <TableCell>{u.email}</TableCell>
+                        {/* Capitalize role */}
+                        <TableCell>
+                            {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
+                        </TableCell>
+                        <TableCell align="center">
+                            <IconButton
+                            aria-label="edit"
+                            color="primary"
+                            onClick={() => handleEditClick(u)}
+                            size="small"
+                            >
+                            <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                            aria-label="delete"
+                            color="error"
+                            onClick={() => handleDeleteClick(u._id)}
+                            size="small"
+                            >
+                            <DeleteIcon fontSize="small" />
+                            </IconButton>
+                        </TableCell>
+                        </StyledTableRow>
+                    ))}
+                </TableBody>
             </Table>
           </TableContainer>
         )}

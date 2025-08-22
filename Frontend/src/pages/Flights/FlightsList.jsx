@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import {
+  Box,
   Card,
   CardContent,
-  Typography,
   Table,
+  TableBody,
+  TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableCell,
-  TableBody,
   IconButton,
   TextField,
   MenuItem,
@@ -38,7 +39,7 @@ const statusColors = {
   cancelled: { bg: "#ffebee", color: "#c62828" },
 };
 
-export default function FlightsList({ embedded = false }) {
+export default function FlightsList() {
   const { token, user } = useAuth();
   const [flights, setFlights] = useState([]);
   const [err, setErr] = useState("");
@@ -56,14 +57,12 @@ export default function FlightsList({ embedded = false }) {
     }
   };
 
-  useEffect(() => {
-    loadFlights();
-  }, []);
+  useEffect(() => { loadFlights(); }, []);
 
-  const startEdit = (flight) => {
+  const startEdit = (f) => {
     if (!canEdit) return;
-    setEditFlight(flight._id);
-    setPatch({ status: flight.status, gate: flight.gate || "" });
+    setEditFlight(f._id);
+    setPatch({ status: f.status, gate: f.gate || "" });
   };
 
   const saveEdit = async () => {
@@ -88,79 +87,77 @@ export default function FlightsList({ embedded = false }) {
   };
 
   if (err) return <Alert severity="error">{err}</Alert>;
-  if (flights.length === 0)
-    return <Alert severity="info">No flights found.</Alert>;
+  if (!flights.length) return <Alert severity="info">No flights found.</Alert>;
 
   return (
     <Card sx={{ borderRadius: 3 }}>
       <CardContent>
-        <Table size="small" sx={{ "& th": { fontWeight: 700 }, "& tr:nth-of-type(odd)": { backgroundColor: "#fafafa" } }}>
-          <TableHead>
-            <TableRow>
-              <TableCell>Flight No</TableCell>
-              <TableCell>Origin → Destination</TableCell>
-              <TableCell>Gate</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="center">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {flights.map((f) => (
-              <TableRow key={f._id}>
-                <TableCell>{f.flightNo}</TableCell>
-                <TableCell>{f.origin} → {f.destination}</TableCell>
-
-                <TableCell>
-                  {editFlight === f._id ? (
-                    <TextField
-                      size="small"
-                      value={patch.gate}
-                      onChange={(e) => setPatch({ ...patch, gate: e.target.value })}
-                    />
-                  ) : (
-                    f.gate || "-"
-                  )}
-                </TableCell>
-
-                <TableCell>
-                  {editFlight === f._id ? (
-                    <TextField
-                      size="small"
-                      select
-                      value={patch.status}
-                      onChange={(e) => setPatch({ ...patch, status: e.target.value })}
-                    >
-                      {statusOptions.map((opt) => (
-                        <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                      ))}
-                    </TextField>
-                  ) : (
-                    <Chip
-                      label={statusOptions.find((s) => s.value === f.status)?.label || f.status}
-                      sx={{ backgroundColor: statusColors[f.status]?.bg, color: statusColors[f.status]?.color, fontWeight: 600, borderRadius: "8px" }}
-                    />
-                  )}
-                </TableCell>
-
-                <TableCell align="center">
-                  {editFlight === f._id ? (
-                    <>
-                      <Button size="small" variant="contained" onClick={saveEdit} sx={{ mr: 1 }}>Save</Button>
-                      <Button size="small" onClick={() => setEditFlight(null)}>Cancel</Button>
-                    </>
-                  ) : (
-                    canEdit && (
-                      <>
-                        <IconButton onClick={() => startEdit(f)}><EditIcon /></IconButton>
-                        <IconButton onClick={() => handleDelete(f._id)}><DeleteIcon color="error" /></IconButton>
-                      </>
-                    )
-                  )}
-                </TableCell>
+        <TableContainer sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+          <Table>
+            <TableHead sx={{ backgroundColor: '#af9233ff' }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700, color: 'primary.contrastText' }}>Flight No</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'primary.contrastText' }}>Origin → Destination</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'primary.contrastText' }}>Scheduled Departure</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'primary.contrastText' }}>Scheduled Arrival</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'primary.contrastText' }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'primary.contrastText' }}>Gate</TableCell>
+                {canEdit && <TableCell sx={{ fontWeight: 700, color: 'primary.contrastText' }} align="center">Actions</TableCell>}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {flights.map((f, idx) => (
+                <TableRow key={f._id} sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fafafa" } }}>
+                  <TableCell>{f.flightNo}</TableCell>
+                  <TableCell>{f.origin} → {f.destination}</TableCell>
+                  <TableCell>{new Date(f.scheduledDep).toLocaleString()}</TableCell>
+                  <TableCell>{new Date(f.scheduledArr).toLocaleString()}</TableCell>
+                  <TableCell>
+                    {editFlight === f._id ? (
+                      <TextField
+                        size="small"
+                        select
+                        value={patch.status}
+                        onChange={(e) => setPatch({ ...patch, status: e.target.value })}
+                      >
+                        {statusOptions.map((s) => <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>)}
+                      </TextField>
+                    ) : (
+                      <Chip
+                        label={statusOptions.find(s => s.value === f.status)?.label || f.status}
+                        sx={{ backgroundColor: statusColors[f.status]?.bg, color: statusColors[f.status]?.color, fontWeight: 600, borderRadius: "8px" }}
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editFlight === f._id ? (
+                      <TextField
+                        size="small"
+                        value={patch.gate}
+                        onChange={(e) => setPatch({ ...patch, gate: e.target.value })}
+                      />
+                    ) : f.gate || "-"}
+                  </TableCell>
+                  {canEdit && (
+                    <TableCell align="center">
+                      {editFlight === f._id ? (
+                        <>
+                          <Button size="small" variant="contained" onClick={saveEdit} sx={{ mr: 1 }}>Save</Button>
+                          <Button size="small" onClick={() => setEditFlight(null)}>Cancel</Button>
+                        </>
+                      ) : (
+                        <>
+                          <IconButton onClick={() => startEdit(f)}><EditIcon /></IconButton>
+                          <IconButton onClick={() => handleDelete(f._id)}><DeleteIcon color="error" /></IconButton>
+                        </>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </CardContent>
     </Card>
   );

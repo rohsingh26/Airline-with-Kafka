@@ -9,10 +9,12 @@ import {
   Button,
   Alert,
   MenuItem,
+  Divider
 } from "@mui/material";
 import { useAuth } from "../../context/AuthContext";
 import * as api from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import FlightsList from "./FlightsList";
 
 const statusOptions = [
   { value: "scheduled", label: "Scheduled" },
@@ -58,7 +60,7 @@ export default function FlightCreate() {
   };
 
   return (
-    <Card sx={{ maxWidth: 1212, mx: "auto", borderRadius: 3 }}>
+    <Card sx={{ mx: "auto", borderRadius: 3 }}>
       <CardContent>
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
           Create Flight
@@ -174,6 +176,11 @@ export default function FlightCreate() {
           >
             Create
           </Button>
+            <Divider sx={{ my: 4 }} />
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
+                All Flights
+            </Typography>
+            <FlightsList />
         </Box>
       </CardContent>
     </Card>

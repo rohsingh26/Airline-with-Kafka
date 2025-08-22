@@ -8,9 +8,11 @@ import {
   Button,
   Alert,
   MenuItem,
+  Divider
 } from "@mui/material";
 import * as api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import BaggageList from "./BaggageList";
 
 export default function BaggageCreate({ onCreated }) {
   const { token, user } = useAuth();
@@ -79,7 +81,7 @@ export default function BaggageCreate({ onCreated }) {
   ];
 
   return (
-    <Card sx={{ maxWidth: 1030, mx: "auto", borderRadius: 3 }}>
+    <Card sx={{ maxWidth: 1112, mx: "auto", borderRadius: 3 }}>
       <CardContent>
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
           Add Baggage
@@ -163,6 +165,12 @@ export default function BaggageCreate({ onCreated }) {
         >
           Save
         </Button>
+        <Divider sx={{ my: 4 }} />
+        
+              <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
+                Baggages
+              </Typography>
+              <BaggageList />
       </CardContent>
     </Card>
   );
