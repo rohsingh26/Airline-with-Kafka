@@ -12,7 +12,8 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { socket } from "../services/socket";
 
-export default function FlightNotificationModal() {
+// Accept a new prop: onOpenNotificationsHistory
+export default function FlightNotificationModal({ onOpenNotificationsHistory }) { 
   const [queue, setQueue] = useState([]); // store flight updates
   const [current, setCurrent] = useState(null); // currently displayed flight
   const [open, setOpen] = useState(false);
@@ -22,9 +23,7 @@ export default function FlightNotificationModal() {
       setQueue((prev) => [...prev, event]);
     };
 
-    // Listen to both channels (flightUpdate is the one likely broadcast by server)
     socket.on("flightUpdate", handleUpdate); 
-    // We keep the manual listener just in case you use it later
     socket.on("flightUpdateManual", handleUpdate); 
 
     return () => {
@@ -33,7 +32,6 @@ export default function FlightNotificationModal() {
     };
   }, []);
 
-  // Whenever queue has items and nothing is shown → show the first one
   useEffect(() => {
     if (!current && queue.length > 0) {
       setCurrent(queue[0]);
@@ -47,10 +45,17 @@ export default function FlightNotificationModal() {
     setCurrent(null);
   };
 
+  // New handler for "See Notifications" button
+  const handleSeeNotificationsClick = () => {
+    handleClose(); // First, close the current real-time notification modal
+    if (onOpenNotificationsHistory) {
+      onOpenNotificationsHistory(); // Then, tell the parent to open the history modal
+    }
+  };
+
   if (!current) return null;
 
   const getBorderColor = (status) => {
-    // We try to grab status from the current object or an 'updates' field if present
     const statusValue = status || current.status || current.updates?.status;
 
     switch (statusValue?.toLowerCase()) {
@@ -63,15 +68,12 @@ export default function FlightNotificationModal() {
     }
   };
 
-  // REMOVED getNotificationMessage FUNCTION
-
   return (
     <Dialog
       open={open}
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
-      // Use the robust status check in getBorderColor
       PaperProps={{
         sx: { border: getBorderColor(), borderRadius: 3 }
       }}
@@ -84,7 +86,6 @@ export default function FlightNotificationModal() {
       </DialogTitle>
 
       <DialogContent dividers>
-        {/* --- Static, Generic Message --- */}
         <Box sx={{ mb: 2 }}>
             <Typography variant="h6" sx={{ mb: 1 }}>
               Hi all users,
@@ -93,18 +94,19 @@ export default function FlightNotificationModal() {
               There's some important <b>flight data updated</b>.
             </Typography>
             <Typography variant="body1">
-              Please <b>refresh the dashboard</b> or <b>check notification</b> to see the latest changes.
+              Please <b>see notifications</b> or <b>refresh the dashboard</b> to check the latest changes.
             </Typography>
         </Box>
-        
-        {/* --- REMOVED Full Details Section --- 
-             (Since the data is unreliable, showing the full details might confuse users) 
-        */}
       </DialogContent>
 
       <DialogActions>
-        {/* Optional: Add a button to force a page refresh, which loads the new data */}
-        <Button variant="outlined" onClick={() => window.location.reload()}>Refresh Dashboard</Button>
+        {/* Changed button text and onClick handler */}
+        <Button 
+            variant="outlined" 
+            onClick={handleSeeNotificationsClick}
+        >
+            See Notifications
+        </Button>
         <Button variant="contained" onClick={handleClose}>Okay, I'll check it</Button>
       </DialogActions>
     </Dialog>

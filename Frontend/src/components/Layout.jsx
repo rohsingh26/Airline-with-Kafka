@@ -20,18 +20,18 @@ import AddIcon from "@mui/icons-material/Add";
 import LogoutIcon from "@mui/icons-material/Logout";
 import EditIcon from "@mui/icons-material/Edit";
 import MenuIcon from "@mui/icons-material/Menu";
-import NotificationsIcon from "@mui/icons-material/Notifications"; // <-- NEW IMPORT
+import NotificationsIcon from "@mui/icons-material/Notifications"; 
 import { useAuth } from "../context/AuthContext";
 import ProfileDialog from "./ProfileDialog";
 import FlightNotification from "./FlightNotificationModal";
-import NotificationBellModal from "./NotificationBellModal"; // <-- NEW IMPORT
+import NotificationBellModal from "./NotificationBellModal";
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [menuAnchor, setMenuAnchor] = React.useState(null);
   const [openProfile, setOpenProfile] = React.useState(false);
-  const [openNotifications, setOpenNotifications] = React.useState(false); // <-- NEW STATE
+  const [openNotifications, setOpenNotifications] = React.useState(false); 
   const open = Boolean(anchorEl);
   const location = useLocation();
   const navigate = useNavigate();
@@ -219,7 +219,7 @@ export default function Layout() {
             {/* --- BELL ICON --- */}
             <IconButton 
                 color="inherit" 
-                onClick={() => setOpenNotifications(true)} // <-- Open NotificationBellModal
+                onClick={() => setOpenNotifications(true)} 
                 sx={{ color: '#D4AF37' }} 
             >
                 <NotificationsIcon />
@@ -301,19 +301,17 @@ export default function Layout() {
       </AppBar>
 
       <Box sx={{ p: 3 }}>
-        {/* This is the original real-time notification modal (still active for immediate pushes) */}
-        <FlightNotification /> 
+        {/* Pass the handler to open the history modal */}
+        <FlightNotification onOpenNotificationsHistory={() => setOpenNotifications(true)} /> 
         <Outlet />
       </Box>
 
       <ProfileDialog open={openProfile} onClose={() => setOpenProfile(false)} user={user} />
       
-      {/* --- NOTIFICATION HISTORY MODAL --- */}
       <NotificationBellModal 
           open={openNotifications} 
-          onClose={() => setOpenNotifications(false)} // <-- Close handler for the modal
+          onClose={() => setOpenNotifications(false)} 
       />
-      {/* ---------------------------------- */}
     </Box>
   );
 }
