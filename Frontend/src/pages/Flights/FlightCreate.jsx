@@ -93,7 +93,7 @@ export default function FlightCreate() {
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
-              label="Origin (IATA)"
+              label="Origin"
               value={form.origin}
               onChange={(e) => setForm({ ...form, origin: e.target.value })}
               required
@@ -103,7 +103,7 @@ export default function FlightCreate() {
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
-              label="Destination (IATA)"
+              label="Destination"
               value={form.destination}
               onChange={(e) => setForm({ ...form, destination: e.target.value })}
               required

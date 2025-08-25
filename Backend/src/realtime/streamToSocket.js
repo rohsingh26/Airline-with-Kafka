@@ -32,7 +32,7 @@ export async function streamToSocket(io) {
       },
     });
 
-    console.log("✅ Kafka → Socket streaming started");
+    console.log("✅ Kafka → Socket streaming started", process.env.KAFKA_BROKERS?.split(',') || []);
   } catch (err) {
     console.error("❌ Error in streamToSocket:", err);
   }

@@ -7,185 +7,274 @@ import { redis } from '../config/redis.js';
 
 const router = Router();
 
+// Define Redis constants for the new Hash approach
+const REDIS_FLIGHT_NOTIFICATIONS_HASH_KEY = 'global:flight_notifications_hash';
+const NOTIFICATION_TTL_SECONDS = 3600; // 1 hour for the entire hash key
+
+// Helper function to safely convert Mongoose Date objects to ISO strings
+const toSafeISO = (date) => (date instanceof Date && !isNaN(date) ? date.toISOString() : null);
+
+
 /**
  * ✈️ Create new flight
  */
 router.post('/',
-  authRequired(['admin', 'airline']),
-  body('flightNo').notEmpty(),
-  body('origin').notEmpty(),
-  body('destination').notEmpty(),
-  body('status').optional().toLowerCase().isIn(['scheduled', 'boarding', 'departed', 'arrived', 'delayed', 'cancelled']),
-  async (req, res, next) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    authRequired(['admin', 'airline']),
+    body('flightNo').notEmpty(),
+    body('origin').notEmpty(),
+    body('destination').notEmpty(),
+    body('status').optional().toLowerCase().isIn(['scheduled', 'boarding', 'departed', 'arrived', 'delayed', 'cancelled']),
+    async (req, res, next) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-      const payload = { ...req.body, createdBy: req.user.sub };
-      const f = await Flight.create(payload);
+            const payload = { ...req.body, createdBy: req.user.sub };
+            const f = await Flight.create(payload);
 
-      await producer.send({
-        topic: 'flight-events',
-        messages: [{
-          key: f.flightNo,
-          value: JSON.stringify({
-            type: 'flight',
-            subtype: 'created',
-            flightId: f._id,
-            flightNo: f.flightNo,
-            payload
-          })
-        }]
-      });
+            await producer.send({
+                topic: 'flight-events',
+                messages: [{
+                    key: f.flightNo,
+                    value: JSON.stringify({
+                        type: 'flight',
+                        subtype: 'created',
+                        flightId: f._id,
+                        flightNo: f.flightNo,
+                        payload
+                    })
+                }]
+            });
 
-      await redis.set(`flight:${f._id}:status`, JSON.stringify({
-        flightNo: f.flightNo,
-        gate: f.gate,
-        status: f.status,
-        scheduledDep: f.scheduledDep,
-        scheduledArr: f.scheduledArr
-      }), { EX: 3600 });
+            // Store initial flight status in Redis cache
+            await redis.set(`flight:${f._id}:status`, JSON.stringify({
+                flightNo: f.flightNo,
+                gate: f.gate,
+                status: f.status,
+                // Use safe helper for consistency
+                scheduledDep: toSafeISO(f.scheduledDep),
+                scheduledArr: toSafeISO(f.scheduledArr)
+            }), { EX: 3600 });
 
-      res.status(201).json({ message: 'Flight created', flightId: f._id });
-    } catch (err) {
-      next(err);
+            res.status(201).json({ message: 'Flight created', flightId: f._id });
+        } catch (err) {
+            next(err);
+        }
     }
-  }
 );
 
 /**
  * 📋 Get all flights
  */
 router.get('/', authRequired(['admin', 'airline', 'baggage', 'passenger']), async (req, res, next) => {
-  try {
-    const flights = await Flight.find().sort({ createdAt: -1 }).lean();
-    res.json(flights);
-  } catch (err) {
-    next(err);
-  }
+    try {
+        const flights = await Flight.find().sort({ createdAt: -1 }).lean();
+        res.json(flights);
+    } catch (err) {
+        next(err);
+    }
 });
 
 /**
  * 🔎 Search flight by flightNo (case-insensitive, cached)
  */
 router.get('/search/:flightNo', authRequired(['admin', 'airline', 'baggage', 'passenger']), async (req, res, next) => {
-  try {
-    const { flightNo } = req.params;
+    try {
+        const { flightNo } = req.params;
 
-    // Check cache
-    const cached = await redis.get(`flightNo:${flightNo.toUpperCase()}`);
-    if (cached) return res.json(JSON.parse(cached));
+        // Check cache
+        const cached = await redis.get(`flightNo:${flightNo.toUpperCase()}`);
+        if (cached) return res.json(JSON.parse(cached));
 
-    // Case-insensitive search
-    const flight = await Flight.findOne({ flightNo: new RegExp(`^${flightNo}$`, "i") }).lean();
-    if (!flight) return res.status(404).json({ error: 'Flight not found' });
+        // Case-insensitive search
+        const flight = await Flight.findOne({ flightNo: new RegExp(`^${flightNo}$`, "i") }).lean();
+        if (!flight) return res.status(404).json({ error: 'Flight not found' });
 
-    // Save to cache
-    await redis.set(`flightNo:${flight.flightNo.toUpperCase()}`, JSON.stringify(flight), { EX: 600 });
+        // Save to cache
+        await redis.set(`flightNo:${flight.flightNo.toUpperCase()}`, JSON.stringify(flight), { EX: 600 });
 
-    res.json(flight);
-  } catch (err) {
-    next(err);
-  }
+        res.json(flight);
+    } catch (err) {
+        next(err);
+    }
 });
 
 /**
  * ✏️ Update flight
  */
 router.patch('/:id',
-  authRequired(['admin', 'airline']),
-  body('status').optional().isIn(['scheduled', 'boarding', 'departed', 'arrived', 'delayed', 'cancelled']),
-  body('gate').optional().trim().escape(),
-  async (req, res, next) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    authRequired(['admin', 'airline']),
+    body('status').optional().isIn(['scheduled', 'boarding', 'departed', 'arrived', 'delayed', 'cancelled']),
+    body('gate').optional().trim().escape(),
+    async (req, res, next) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-      const { id } = req.params;
-      const updates = { ...req.body };
+            const { id } = req.params;
+            const updates = { ...req.body };
 
-      ['flightNo', 'createdBy', '_id'].forEach(field => delete updates[field]);
+            ['flightNo', 'createdBy', '_id'].forEach(field => delete updates[field]);
 
-      const updatedFlight = await Flight.findByIdAndUpdate(
-        id,
-        updates,
-        { new: true, runValidators: true }
-      );
+            // 1. Get the original flight data BEFORE update to track changes
+            const originalFlight = await Flight.findById(id).lean();
+            if (!originalFlight) return res.status(404).json({ error: 'Flight not found' });
 
-      if (!updatedFlight) return res.status(404).json({ error: 'Flight not found' });
+            // 2. Perform the update
+            const updatedFlight = await Flight.findByIdAndUpdate(
+                id,
+                updates,
+                { new: true, runValidators: true }
+            ).lean(); // Use .lean() here
 
-      await producer.send({
-        topic: 'flight-events',
-        messages: [{
-          key: updatedFlight.flightNo,
-          value: JSON.stringify({
-            type: 'flight',
-            subtype: 'updated',
-            flightId: updatedFlight._id,
-            flightNo: updatedFlight.flightNo,
-            payload: updates,
-            timestamp: new Date().toISOString()
-          })
-        }]
-      });
+            if (!updatedFlight) return res.status(404).json({ error: 'Flight not found' });
 
-      await redis.set(
-        `flight:${updatedFlight._id}:status`,
-        JSON.stringify({
-          flightNo: updatedFlight.flightNo,
-          gate: updatedFlight.gate,
-          status: updatedFlight.status,
-          scheduledDep: updatedFlight.scheduledDep?.toISOString(),
-          scheduledArr: updatedFlight.scheduledArr?.toISOString(),
-          lastUpdated: new Date().toISOString()
-        }),
-        { EX: 3600 }
-      );
+            // ------------------------------------------------------------------
+            // 3. KAFKA: Send the payload
+            await producer.send({
+                topic: 'flight-events',
+                messages: [{
+                    key: updatedFlight.flightNo,
+                    value: JSON.stringify({
+                        type: 'flight',
+                        subtype: 'updated',
+                        flightId: updatedFlight._id,
+                        flightNo: updatedFlight.flightNo,
+                        payload: updates,
+                        timestamp: new Date().toISOString()
+                    })
+                }]
+            });
 
-      await redis.del(`flightNo:${updatedFlight.flightNo.toUpperCase()}`);
+            // ------------------------------------------------------------------
+            // 4. NOTIFICATION HASH (Redis)
 
-      res.json({ message: 'Flight updated successfully', flightId: updatedFlight._id });
-    } catch (err) {
-      next(err);
+            // Determine what changed for the narrative message
+            let changeDescription = [];
+            if (updates.status && updates.status !== originalFlight.status) {
+                changeDescription.push(`Status changed from ${originalFlight.status.toUpperCase()} to ${updates.status.toUpperCase()}`);
+            }
+            if (updates.gate && updates.gate !== originalFlight.gate) {
+                changeDescription.push(`Gate changed from ${originalFlight.gate || 'TBD'} to ${updatedFlight.gate?.toUpperCase() || 'TBD'}`);
+            }
+            if (changeDescription.length === 0) {
+                changeDescription.push("Flight details updated.");
+            }
+
+            // Construct the FULL notification object
+            const notification = {
+                id: updatedFlight._id,
+                flightNo: updatedFlight.flightNo,
+                origin: updatedFlight.origin,
+                destination: updatedFlight.destination,
+                status: updatedFlight.status,
+                gate: updatedFlight.gate || 'TBD',
+                scheduledDep: toSafeISO(updatedFlight.scheduledDep),
+                scheduledArr: toSafeISO(updatedFlight.scheduledArr),
+                message: changeDescription.join(' and '), // Descriptive message for the user
+                timestamp: new Date().toISOString(), // Use this for sorting on the frontend
+                read: false,
+            };
+
+            // HSET: Add/Update the notification in the Redis Hash. flightNo is the field key.
+            await redis.hSet(
+                REDIS_FLIGHT_NOTIFICATIONS_HASH_KEY, 
+                updatedFlight.flightNo, 
+                JSON.stringify(notification)
+            );
+
+            // Set TTL on the hash key to expire all notifications eventually
+            await redis.expire(REDIS_FLIGHT_NOTIFICATIONS_HASH_KEY, NOTIFICATION_TTL_SECONDS);
+
+
+            // ------------------------------------------------------------------
+            // 5. CACHE: Update Redis status cache (fixing date conversion)
+            await redis.set(
+                `flight:${updatedFlight._id}:status`,
+                JSON.stringify({
+                    flightNo: updatedFlight.flightNo,
+                    gate: updatedFlight.gate,
+                    status: updatedFlight.status,
+                    scheduledDep: toSafeISO(updatedFlight.scheduledDep), // Fixed
+                    scheduledArr: toSafeISO(updatedFlight.scheduledArr), // Fixed
+                    lastUpdated: new Date().toISOString()
+                }),
+                { EX: 3600 }
+            );
+
+            // Invalidate search cache
+            await redis.del(`flightNo:${updatedFlight.flightNo.toUpperCase()}`);
+
+            res.json({ message: 'Flight updated successfully', flightId: updatedFlight._id });
+        } catch (err) {
+            next(err);
+        }
     }
-  }
 );
+
+/**
+ * 🔔 Get notification list for bell icon modal (Fetching from Redis Hash)
+ */
+router.get('/notifications', authRequired(['admin', 'airline', 'baggage', 'passenger']), async (req, res, next) => {
+    try {
+        // HGETALL: Fetch all field-value pairs from the hash
+        const hashData = await redis.hGetAll(REDIS_FLIGHT_NOTIFICATIONS_HASH_KEY);
+
+        // Convert the object of key:JSON_string pairs into an array of JS objects
+        const notifications = Object.values(hashData)
+            .map(jsonString => JSON.parse(jsonString))
+            // Optionally, sort by timestamp (newest first) since HGETALL is unsorted
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            // Limit to a reasonable number (e.g., 30 for the modal)
+            .slice(0, 30);
+
+        res.json(notifications);
+    } catch (err) {
+        console.error("Redis notification hash load failed:", err);
+        res.status(500).json({ error: 'Failed to load notifications. Check network or permissions.' });
+    }
+});
+
 
 /**
  * ❌ Delete flight
  */
-router.delete('/:id', authRequired(['admin','airline']), async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const deletedFlight = await Flight.findByIdAndDelete(id);
+router.delete('/:id', authRequired(['admin', 'airline']), async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const deletedFlight = await Flight.findByIdAndDelete(id);
 
-    if (!deletedFlight) return res.status(404).json({ error: 'Flight not found' });
+        if (!deletedFlight) return res.status(404).json({ error: 'Flight not found' });
 
-    await producer.send({
-      topic: 'flight-events',
-      messages: [{
-        key: deletedFlight.flightNo,
-        value: JSON.stringify({
-          type: 'flight',
-          subtype: 'deleted',
-          flightId: deletedFlight._id,
-          flightNo: deletedFlight.flightNo,
-          timestamp: new Date().toISOString()
-        })
-      }]
-    });
+        await producer.send({
+            topic: 'flight-events',
+            messages: [{
+                key: deletedFlight.flightNo,
+                value: JSON.stringify({
+                    type: 'flight',
+                    subtype: 'deleted',
+                    flightId: deletedFlight._id,
+                    flightNo: deletedFlight.flightNo,
+                    timestamp: new Date().toISOString()
+                })
+            }]
+        });
 
-    await redis.del(`flight:${deletedFlight._id}:status`);
-    await redis.del(`flightNo:${deletedFlight.flightNo.toUpperCase()}`);
+        // Clean up Redis
+        await redis.del(`flight:${deletedFlight._id}:status`);
+        await redis.del(`flightNo:${deletedFlight.flightNo.toUpperCase()}`);
+        
+        // Remove the entry from the notification hash as well
+        await redis.hDel(REDIS_FLIGHT_NOTIFICATIONS_HASH_KEY, deletedFlight.flightNo);
 
-    res.json({
-      message: 'Flight deleted successfully',
-      flightNo: deletedFlight.flightNo,
-      deletedAt: new Date().toISOString()
-    });
-  } catch (err) {
-    next(err);
-  }
+        res.json({
+            message: 'Flight deleted successfully',
+            flightNo: deletedFlight.flightNo,
+            deletedAt: new Date().toISOString()
+        });
+    } catch (err) {
+        next(err);
+    }
 });
 
 export default router;

@@ -86,6 +86,15 @@ export async function deleteFlight(id, token) {
   return data;
 }
 
+// New: Fetch notification list from Redis API endpoint
+export async function listNotifications(token) {
+  const { data } = await axios.get(`${API}/flights/notifications`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return data;
+}
+
+
 // --- baggage ---
 export async function createBaggage(payload, token) {
   const { data } = await axios.post(`${API}/baggage`, payload, {

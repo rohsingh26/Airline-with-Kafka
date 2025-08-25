@@ -20,14 +20,18 @@ import AddIcon from "@mui/icons-material/Add";
 import LogoutIcon from "@mui/icons-material/Logout";
 import EditIcon from "@mui/icons-material/Edit";
 import MenuIcon from "@mui/icons-material/Menu";
+import NotificationsIcon from "@mui/icons-material/Notifications"; // <-- NEW IMPORT
 import { useAuth } from "../context/AuthContext";
 import ProfileDialog from "./ProfileDialog";
+import FlightNotification from "./FlightNotificationModal";
+import NotificationBellModal from "./NotificationBellModal"; // <-- NEW IMPORT
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [menuAnchor, setMenuAnchor] = React.useState(null);
   const [openProfile, setOpenProfile] = React.useState(false);
+  const [openNotifications, setOpenNotifications] = React.useState(false); // <-- NEW STATE
   const open = Boolean(anchorEl);
   const location = useLocation();
   const navigate = useNavigate();
@@ -126,10 +130,10 @@ export default function Layout() {
             <Typography
                 variant="h6"
                 sx={{
-                    fontWeight: 700,
-                    color: "#D4AF37",
-                    cursor: "pointer", // make it look clickable
-                    "&:hover": { color: "#fff" }, // hover effect like dashboard links
+                  fontWeight: 700,
+                  color: "#D4AF37",
+                  cursor: "pointer", 
+                  "&:hover": { color: "#fff" }, 
                 }}
                 onClick={() => navigate("/")}
                 >
@@ -204,13 +208,23 @@ export default function Layout() {
             </Box>
           )}
 
-          {/* Profile Menu */}
+          {/* Profile Menu & Bell Icon */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {!isTiny && (
               <Typography variant="body1" sx={{ fontWeight: 600, color: "#fff" }}>
                 {user?.name}
               </Typography>
             )}
+
+            {/* --- BELL ICON --- */}
+            <IconButton 
+                color="inherit" 
+                onClick={() => setOpenNotifications(true)} // <-- Open NotificationBellModal
+                sx={{ color: '#D4AF37' }} 
+            >
+                <NotificationsIcon />
+            </IconButton>
+            {/* --------------- */}
 
             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small">
               <Avatar sx={{ bgcolor: "#D4AF37", color: "#1A1A2E", fontWeight: 700 }}>
@@ -287,10 +301,19 @@ export default function Layout() {
       </AppBar>
 
       <Box sx={{ p: 3 }}>
+        {/* This is the original real-time notification modal (still active for immediate pushes) */}
+        <FlightNotification /> 
         <Outlet />
       </Box>
 
       <ProfileDialog open={openProfile} onClose={() => setOpenProfile(false)} user={user} />
+      
+      {/* --- NOTIFICATION HISTORY MODAL --- */}
+      <NotificationBellModal 
+          open={openNotifications} 
+          onClose={() => setOpenNotifications(false)} // <-- Close handler for the modal
+      />
+      {/* ---------------------------------- */}
     </Box>
   );
 }
