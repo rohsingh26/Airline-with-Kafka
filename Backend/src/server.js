@@ -39,9 +39,9 @@ const start = async () => {
     // Stream Kafka → Socket.io
     await streamToSocket(io);
 
-    server.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
+    server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
   } catch (err) {
-    console.error("❌ Server start failed:", err);
+    console.error("Server start failed:", err);
   }
 };
 

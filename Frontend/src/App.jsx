@@ -29,7 +29,6 @@ function App() {
       >
         <Route index element={<Dashboard />} />
 
-        {/* Flights */}
         <Route
           path="flights"
           element={
@@ -63,7 +62,6 @@ function App() {
           }
         />
 
-        {/* Baggage */}
         <Route
           path="baggage"
           element={
@@ -84,7 +82,6 @@ function App() {
           }
         />
 
-        {/* Passenger */}
         <Route
           path="my-flights"
           element={
@@ -94,7 +91,6 @@ function App() {
           }
         />
 
-        {/* Admin */}
         <Route
           path="admin/add-users"
           element={
